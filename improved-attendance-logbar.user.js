@@ -1,0 +1,105 @@
+// ==UserScript==
+// @name         Improved 42Attendance Logbar
+// @namespace    https://github.com/parad0xe
+// @version      2026.11.10
+// @description  Show the gap with the expected logged time
+// @author       parad0xe
+// @match        https://attendance.42lyon.fr/me
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=42lyon.fr
+// @updateURL    https://raw.githubusercontent.com/parad0xe/improved-42attendance-logbar/main/improved-42attendance-logbar.user.js
+// @downloadURL  https://raw.githubusercontent.com/parad0xe/improved-42attendance-logbar/main/improved-42attendance-logbar.user.js
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    const WORKDAY_MINUTES = 7 * 60
+
+    function showMonthGap() {
+        function getExpectedMinutes() {
+            const today = new Date()
+            const year = today.getFullYear()
+            const month = today.getMonth()
+
+            let elapsedWorkingDays = 0
+
+            for (let day = 1; day <= today.getDate(); day++) {
+               const dayOfWeek = new Date(year, month, day).getDay()
+
+               if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                   elapsedWorkingDays++
+               }
+            }
+
+            return elapsedWorkingDays * WORKDAY_MINUTES
+        }
+
+        function parseMinutes(text) {
+            let [hours, minutes] = text.split(":").map((x) => parseInt(x))
+            return hours * 60 + minutes
+        }
+
+        function formatMinutes(minutes) {
+            return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+        }
+
+        let summaryElement = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) div:nth-child(1)")
+        let progressTrackElement = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) div:nth-child(2) div:nth-child(2)")
+        progressTrackElement.classList.add("relative")
+        progressTrackElement.querySelector("div").classList.add("relative", "z-[1]")
+
+        let loggedMonthText = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) > div div:nth-child(2) span:nth-child(1)").textContent
+        let monthGoalText = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) > div div:nth-child(2) span:nth-child(3)").textContent
+        let loggedTodayText = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div > div div span:nth-child(1)").textContent
+
+        const loggedMonthMinutes = parseMinutes(loggedMonthText)
+        const monthGoalMinutes = parseMinutes(monthGoalText)
+        const loggedTodayMinutes = parseMinutes(loggedTodayText.replace("+", "").trim())
+        const loggedTotalMinutes = loggedMonthMinutes + loggedTodayMinutes
+
+        if (loggedMonthMinutes >= monthGoalMinutes) { return }
+
+        let expectedMinutes = getExpectedMinutes()
+        const gapMinutes = Math.abs(expectedMinutes - loggedTotalMinutes)
+        const gapDays = gapMinutes / WORKDAY_MINUTES
+        const gapDirection = (expectedMinutes <= loggedTotalMinutes) ? {
+            daysLabel: "bonus",
+            sign: "+",
+            color: "#15803d"
+        } : {
+            daysLabel: "missing",
+            sign: "-",
+            color: "#612c2c"
+        }
+
+
+        if (expectedMinutes > loggedTotalMinutes) {
+            let expectedProgressBarElement = document.createElement("div")
+            expectedProgressBarElement.className += "h-full rounded-full transition-[width] absolute top-0 z-[2] flex flex-col items-center justify-end"
+            expectedProgressBarElement.style.width = `0%`
+            expectedProgressBarElement.style.background = "#ffca0033"
+            progressTrackElement.appendChild(expectedProgressBarElement)
+
+            setTimeout(() => {
+                expectedProgressBarElement.style.width = `${expectedMinutes / monthGoalMinutes * 100}%`
+            }, 30)
+        }
+
+        const gapDaysLabelElement = document.createElement("span")
+        gapDaysLabelElement.className = "pl-2 pr-2"
+        gapDaysLabelElement.style.color = gapDirection.color
+        gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
+        summaryElement.prepend(gapDaysLabelElement)
+
+        const gapTimeLabelElement = document.createElement("strong")
+        gapTimeLabelElement.style.color = gapDirection.color
+        gapTimeLabelElement.title = `expected ${formatMinutes(expectedMinutes)}`
+        gapTimeLabelElement.textContent = `${gapDirection.sign}${formatMinutes(gapMinutes)}`
+        summaryElement.prepend(gapTimeLabelElement)
+    }
+
+    setTimeout(() => {
+        showMonthGap()
+    }, 100)
+})();
