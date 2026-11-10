@@ -5,6 +5,7 @@
 // @description  Show the gap with the expected logged time
 // @author       parad0xe
 // @match        https://attendance.42lyon.fr/me
+// @match        https://attendance.42lyon.fr/me?*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=42lyon.fr
 // @updateURL    https://raw.githubusercontent.com/parad0xe/improved-42attendance-logbar/main/improved-42attendance-logbar.user.js
 // @downloadURL  https://raw.githubusercontent.com/parad0xe/improved-42attendance-logbar/main/improved-42attendance-logbar.user.js
