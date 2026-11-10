@@ -76,7 +76,10 @@
             throw new Error(`${SCRIPT_NAME}: cannot find the goal of the month, the page layout may have changed`)
         }
 
-        let [loggedTodayText, loggedTodayTextOk] = getTimeText("[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div > div div span:nth-child(1)")
+        let timerStarted = document.querySelectorAll("[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div > span").length === 2
+        let [loggedTodayText, loggedTodayTextOk] = timerStarted
+            ? getTimeText("[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div > div div > span:nth-child(1)")
+            : [null, false]
         if (!loggedTodayTextOk) {
             loggedTodayText = "00:00"
         }
