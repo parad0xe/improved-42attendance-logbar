@@ -14,6 +14,7 @@
 (function() {
     'use strict';
 
+    const SCRIPT_NAME = "Improved Attendance Logbar"
     const WORKDAY_MINUTES = 7 * 60
 
     function showMonthGap() {
@@ -40,18 +41,44 @@
             return hours * 60 + minutes
         }
 
+        function getTimeText(selector) {
+            const element = document.querySelector(selector)
+            if (!element) {
+                return ["00:00", false]
+            }
+            return [element.textContent, true]
+        }
+
         function formatMinutes(minutes) {
             return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
         }
 
         let summaryElement = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) div:nth-child(1)")
+        if (!summaryElement) {
+            throw new Error(`${SCRIPT_NAME}: cannot find the month summary, the page layout may have changed`)
+        }
+
         let progressTrackElement = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) div:nth-child(2) div:nth-child(2)")
+        if (!progressTrackElement) {
+            throw new Error(`${SCRIPT_NAME}: cannot find the progress bar, the page layout may have changed`)
+        }
         progressTrackElement.classList.add("relative")
         progressTrackElement.querySelector("div").classList.add("relative", "z-[1]")
 
-        let loggedMonthText = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) > div div:nth-child(2) span:nth-child(1)").textContent
-        let monthGoalText = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) > div div:nth-child(2) span:nth-child(3)").textContent
-        let loggedTodayText = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div > div div span:nth-child(1)").textContent
+        let [loggedMonthText, loggedMonthTextOk] = getTimeText("[data-slot='sidebar-inset'] main div:nth-child(2) > div div:nth-child(2) span:nth-child(1)")
+        if (!loggedMonthTextOk) {
+            throw new Error(`${SCRIPT_NAME}: cannot find the logged time of the month, the page layout may have changed`)
+        }
+
+        let [monthGoalText, monthGoalTextOk] = getTimeText("[data-slot='sidebar-inset'] main div:nth-child(2) > div div:nth-child(2) span:nth-child(3)")
+        if (!monthGoalTextOk) {
+            throw new Error(`${SCRIPT_NAME}: cannot find the goal of the month, the page layout may have changed`)
+        }
+
+        let [loggedTodayText, loggedTodayTextOk] = getTimeText("[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div > div div span:nth-child(1)")
+        if (!loggedTodayTextOk) {
+            loggedTodayText = "00:00"
+        }
 
         const loggedMonthMinutes = parseMinutes(loggedMonthText)
         const monthGoalMinutes = parseMinutes(monthGoalText)
