@@ -119,6 +119,7 @@
                 background: #ffca0033;
                 transition: width 150ms cubic-bezier(0.4, 0, 0.2, 1);
             }
+            .improved-logbar-expected-bar-label { margin-right: 10px; z-index: 10; font-size: 0.9rem; }
 
             .improved-logbar-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; }
             .improved-logbar-gap-days { padding: 0 0.5rem; }
@@ -137,6 +138,12 @@
             expectedProgressBarElement.classList.add("improved-logbar-expected-bar")
             expectedProgressBarElement.style.width = `0%`
             progressTrackElement.appendChild(expectedProgressBarElement)
+
+            const expectedLabelElement = document.createElement("span")
+            expectedLabelElement.style.color = "#4e2f08a1"
+            expectedLabelElement.classList.add("improved-logbar-expected-bar-label")
+            expectedLabelElement.textContent = `${formatMinutes(expectedMinutes)}`
+            expectedProgressBarElement.append(expectedLabelElement)
 
             setTimeout(() => {
                 expectedProgressBarElement.style.width = `${expectedMinutes / monthGoalMinutes * 100}%`
