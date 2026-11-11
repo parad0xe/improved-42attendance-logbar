@@ -20,7 +20,50 @@
 
     const THEME_STORAGE_KEY = "improved-logbar-theme"
     const PLAN_STORAGE_KEY = "improved-logbar-plan"
-    const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    const LANG_COOKIE_KEY = "PARAGLIDE_LOCALE"
+
+    const LABELS = {
+        fr: {
+            WEEKDAYS: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
+            THEME: "Thème",
+            DAYS_OFF: "Jours de repos",
+            HOURS_PER_REMAINING_DAY: "Heures par jour restant",
+            GAP_UNAVAILABLE: "écart indisponible",
+
+            EXPECTED: (time) => `Prévu ${time}`,
+            BONUS_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour" : "jours"} bonus`,
+            MISSING_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour manquant" : "jours manquants"}`,
+
+            ERROR_WORKDAYS_MISSING: "les jours ouvrés du mois sont introuvables, la page a peut-être changé",
+            ERROR_DATA_UNAVAILABLE: (status) => `impossible de charger les données d'attendance (HTTP ${status})`,
+            ERROR_SESSION_EXPIRED: "la session a expiré, rechargez la page",
+            ERROR_SUMMARY_NOT_FOUND: "impossible de trouver le résumé du mois, la mise en page a peut-être changé",
+            ERROR_PROGRESS_BAR_NOT_FOUND: "impossible de trouver la barre de progression, la mise en page a peut-être changé",
+            ERROR_LOGGED_MONTH_NOT_FOUND: "impossible de trouver le temps logué du mois, la mise en page a peut-être changé",
+            ERROR_MONTH_GOAL_NOT_FOUND: "impossible de trouver l'objectif du mois, la mise en page a peut-être changé",
+            WARNING_LOGGED_TODAY_NOT_FOUND: "impossible de trouver le temps logué aujourd'hui",
+        },
+        en: {
+            WEEKDAYS: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            THEME: "Theme",
+            DAYS_OFF: "Days off",
+            HOURS_PER_REMAINING_DAY: "Hours per remaining day",
+            GAP_UNAVAILABLE: "gap unavailable",
+
+            EXPECTED: (time) => `Expected ${time}`,
+            BONUS_DAYS: (days) => `${days.toFixed(1)} bonus ${days < 2 ? "day" : "days"}`,
+            MISSING_DAYS: (days) => `${days.toFixed(1)} missing ${days < 2 ? "day" : "days"}`,
+
+            ERROR_WORKDAYS_MISSING: "the working days of the month are missing, the page may have changed",
+            ERROR_DATA_UNAVAILABLE: (status) => `cannot load the attendance data (HTTP ${status})`,
+            ERROR_SESSION_EXPIRED: "the session has expired, reload the page",
+            ERROR_SUMMARY_NOT_FOUND: "cannot find the month summary, the page layout may have changed",
+            ERROR_PROGRESS_BAR_NOT_FOUND: "cannot find the progress bar, the page layout may have changed",
+            ERROR_LOGGED_MONTH_NOT_FOUND: "cannot find the logged time of the month, the page layout may have changed",
+            ERROR_MONTH_GOAL_NOT_FOUND: "cannot find the goal of the month, the page layout may have changed",
+            WARNING_LOGGED_TODAY_NOT_FOUND: "cannot find the time logged today",
+        },
+    }
 
     const WORKDAY_MINUTES = 7 * 60
     const CLOSURE_START_HOUR = 8
@@ -236,8 +279,36 @@
      * @property {number} dailyMinutes - the time planned on each remaining day
      */
 
+    /**
+     * @typedef {Object} Labels
+     * @property {string[]} WEEKDAYS - from Monday
+     * @property {string} THEME
+     * @property {string} DAYS_OFF
+     * @property {string} HOURS_PER_REMAINING_DAY
+     * @property {(time: string) => string} EXPECTED
+     * @property {(days: number) => string} BONUS_DAYS
+     * @property {(days: number) => string} MISSING_DAYS
+     * @property {string} GAP_UNAVAILABLE
+     * @property {string} ERROR_WORKDAYS_MISSING
+     * @property {(status: number) => string} ERROR_DATA_UNAVAILABLE
+     * @property {string} ERROR_SESSION_EXPIRED
+     * @property {string} ERROR_SUMMARY_NOT_FOUND
+     * @property {string} ERROR_PROGRESS_BAR_NOT_FOUND
+     * @property {string} ERROR_LOGGED_MONTH_NOT_FOUND
+     * @property {string} ERROR_MONTH_GOAL_NOT_FOUND
+     * @property {string} WARNING_LOGGED_TODAY_NOT_FOUND
+     */
+
 
     // HELPERS
+    /**
+     * @param {string} lang
+     * @returns {Labels} the labels in lang, or in English when lang has none
+     */
+    function getLabels(lang) {
+        return LABELS[lang] ?? LABELS.en
+    }
+
     /**
      * @param {string} text - a duration such as "26:33"
      * @returns {number}
@@ -364,12 +435,13 @@
     class Attendance {
         /**
          * @param {Record<string, any>} data - the decoded data of the /me page
+         * @param {Labels} labels - for the error messages
          */
-        constructor(data) {
+        constructor(data, labels) {
             const { calendar, history } = data
 
             if (!Array.isArray(calendar?.workdays) || !calendar.workdays.every((day) => day instanceof Date)) {
-                throw new Error(`${SCRIPT_NAME}: the working days of the month are missing, the page may have changed`)
+                throw new Error(`${SCRIPT_NAME}: ${labels.ERROR_WORKDAYS_MISSING}`)
             }
 
             /** @type {AttendanceCalendar} */
@@ -418,25 +490,26 @@
 
         /**
          * Loads the attendance data of the month shown by the page.
+         * @param {Labels} labels - for the error messages
          * @returns {Promise<Attendance>}
          */
-        static async fetch() {
+        static async fetch(labels) {
             const response = await fetch(`/me/__data.json${location.search}`, { credentials: "same-origin" })
             if (!response.ok) {
-                throw new Error(`${SCRIPT_NAME}: cannot load the attendance data (HTTP ${response.status})`)
+                throw new Error(`${SCRIPT_NAME}: ${labels.ERROR_DATA_UNAVAILABLE(response.status)}`)
             }
 
             // SvelteKit can stream more chunks on the next lines; the page data is the first one.
             const page = JSON.parse((await response.text()).split("\n")[0])
             if (page.type === "redirect") {
-                throw new Error(`${SCRIPT_NAME}: the session has expired, reload the page`)
+                throw new Error(`${SCRIPT_NAME}: ${labels.ERROR_SESSION_EXPIRED}`)
             }
 
             const data = Object.assign({}, ...(page.nodes ?? [])
                 .filter((node) => node?.type === "data" && Array.isArray(node.data))
                 .map((node) => decodeDevalue(node.data)))
 
-            return new Attendance(data)
+            return new Attendance(data, labels)
         }
     }
 
@@ -554,14 +627,23 @@
     }
 
     class Page {
-        constructor() {
+        /**
+         * @param {Labels} labels
+         */
+        constructor(labels) {
+            /**
+             * The texts shown in the page, in the language of the site.
+             * @type {Labels}
+             */
+            this.labels = labels
+
             /**
              * The month summary, where the gap is shown.
              * @type {Element}
              */
             this.summaryElement = document.querySelector(SELECTORS.summary)
             if (!this.summaryElement) {
-                throw new Error(`${SCRIPT_NAME}: cannot find the month summary, the page layout may have changed`)
+                throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_SUMMARY_NOT_FOUND}`)
             }
 
             /**
@@ -570,7 +652,7 @@
              */
             this.progressTrackElement = document.querySelector(SELECTORS.progressTrack)
             if (!this.progressTrackElement) {
-                throw new Error(`${SCRIPT_NAME}: cannot find the progress bar, the page layout may have changed`)
+                throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_PROGRESS_BAR_NOT_FOUND}`)
             }
             this.progressTrackElement.classList.add("relative")
             this.progressTrackElement.querySelector("div").classList.add("relative", "z-[1]")
@@ -582,12 +664,12 @@
         read() {
             let [loggedMonthText, loggedMonthTextOk] = getTimeText(SELECTORS.loggedMonth)
             if (!loggedMonthTextOk) {
-                throw new Error(`${SCRIPT_NAME}: cannot find the logged time of the month, the page layout may have changed`)
+                throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_LOGGED_MONTH_NOT_FOUND}`)
             }
 
             let [monthGoalText, monthGoalTextOk] = getTimeText(SELECTORS.monthGoal)
             if (!monthGoalTextOk) {
-                throw new Error(`${SCRIPT_NAME}: cannot find the goal of the month, the page layout may have changed`)
+                throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_MONTH_GOAL_NOT_FOUND}`)
             }
 
             let timerStarted = document.querySelectorAll(SELECTORS.timerParts).length === 2
@@ -595,7 +677,7 @@
                 ? getTimeText(SELECTORS.loggedToday)
                 : ["00:00", true]
             if (!loggedTodayTextOk) {
-                console.warn(`${SCRIPT_NAME}: cannot find the time logged today`)
+                console.warn(`${SCRIPT_NAME}: ${this.labels.WARNING_LOGGED_TODAY_NOT_FOUND}`)
             }
 
             return {
@@ -683,11 +765,11 @@
             const gapMinutes = Math.abs(expectedMinutes - loggedTotalMinutes)
             const gapDays = gapMinutes / dailyMinutes
             const gapDirection = (expectedMinutes <= loggedTotalMinutes) ? {
-                daysLabel: "bonus",
+                formatDays: this.labels.BONUS_DAYS,
                 sign: "+",
                 className: "improved-logbar-bonus"
             } : {
-                daysLabel: "missing",
+                formatDays: this.labels.MISSING_DAYS,
                 sign: "-",
                 className: "improved-logbar-missing"
             }
@@ -698,7 +780,7 @@
 
             const gapTimeLabelElement = document.createElement("strong")
             gapTimeLabelElement.classList.add(gapDirection.className)
-            gapTimeLabelElement.title = `expected ${formatMinutes(expectedMinutes)}`
+            gapTimeLabelElement.title = this.labels.EXPECTED(formatMinutes(expectedMinutes))
             gapTimeLabelElement.textContent = `${gapDirection.sign}${formatMinutes(gapMinutes)}`
             gapContainer.prepend(gapTimeLabelElement)
 
@@ -706,7 +788,7 @@
                 const gapDaysLabelElement = document.createElement("span")
                 gapDaysLabelElement.className = "improved-logbar-gap-days"
                 gapDaysLabelElement.classList.add(gapDirection.className)
-                gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
+                gapDaysLabelElement.textContent = `(${gapDirection.formatDays(gapDays)})`
                 gapContainer.append(gapDaysLabelElement)
             }
         }
@@ -729,7 +811,7 @@
                 } catch (error) {
                     observer.disconnect()
                     console.error(error)
-                    renderError(error)
+                    renderError(error, this.labels)
                 }
             })
             observer.observe(document.querySelector(SELECTORS.main), { childList: true, subtree: true, characterData: true })
@@ -740,13 +822,37 @@
      * The settings block at the bottom of the sidebar: the plan, the theme and the credit.
      */
     class Settings {
-        constructor() {
+        /**
+         * @param {string} lang
+         */
+        constructor(lang) {
+            /**
+             * The language chosen on the site, such as "fr".
+             * @type {string}
+             */
+            this.lang = lang
+
+            /**
+             * The texts shown by the script, in lang.
+             * @type {Labels}
+             */
+            this.labels = getLabels(lang)
+
             /**
              * The block in the sidebar that holds every setting.
              * @type {HTMLElement}
              */
             this.settingsElement = document.createElement("section")
             this.settingsElement.className = "improved-logbar-settings"
+        }
+
+        /**
+         * Reads the language chosen on the site, or English when none was chosen.
+         * @returns {Promise<Settings>}
+         */
+        static async load() {
+            const localeCookie = await cookieStore.get(LANG_COOKIE_KEY)
+            return new Settings(localeCookie?.value ?? "en")
         }
 
         /**
@@ -783,13 +889,13 @@
 
             const rowElement = document.createElement("div")
             rowElement.className = "improved-logbar-settings-row"
-            rowElement.textContent = "Theme"
+            rowElement.textContent = this.labels.THEME
 
             const switchElement = document.createElement("button")
             switchElement.type = "button"
             switchElement.className = "improved-logbar-theme-switch"
-            switchElement.title = "Theme"
-            switchElement.setAttribute("aria-label", "Theme")
+            switchElement.title = this.labels.THEME
+            switchElement.setAttribute("aria-label", this.labels.THEME)
 
             const applyTheme = () => {
                 const root = document.documentElement
@@ -824,14 +930,15 @@
 
             const titleElement = document.createElement("span")
             titleElement.className = "improved-logbar-settings-title"
-            titleElement.textContent = "Days off"
+            titleElement.textContent = this.labels.DAYS_OFF
 
             const calendarElement = document.createElement("improved-logbar-calendar")
+            calendarElement.lang = this.lang
             calendarElement.setPlan(plan)
 
             const hoursRowElement = document.createElement("label")
             hoursRowElement.className = "improved-logbar-settings-row"
-            hoursRowElement.textContent = "Hours per remaining day"
+            hoursRowElement.textContent = this.labels.HOURS_PER_REMAINING_DAY
 
             const hoursInputElement = document.createElement("input")
             hoursInputElement.type = "number"
@@ -951,7 +1058,7 @@
         }
 
         /**
-         * Draws the month of the plan in weeks from Monday.
+         * Draws the month of the plan in weeks from Monday, with the weekdays in the lang of the widget.
          * @returns {void}
          */
         render() {
@@ -959,7 +1066,7 @@
 
             this.calendarElement.replaceChildren()
 
-            for (const weekday of WEEKDAY_LABELS) {
+            for (const weekday of getLabels(this.lang).WEEKDAYS) {
                 const weekdayElement = document.createElement("div")
                 weekdayElement.classList.add("calendar-weekday")
                 weekdayElement.textContent = weekday
@@ -1007,9 +1114,10 @@
     // MAIN
     /**
      * @param {Error} error
+     * @param {Labels} labels
      * @returns {void}
      */
-    function renderError(error) {
+    function renderError(error, labels) {
         const summaryElement = document.querySelector(SELECTORS.summary)
         if (summaryElement) {
             summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
@@ -1017,7 +1125,7 @@
             const errorElement = document.createElement("span")
             errorElement.className = "improved-logbar-gap-container"
             errorElement.title = error.message
-            errorElement.textContent = "gap unavailable"
+            errorElement.textContent = labels.GAP_UNAVAILABLE
             summaryElement.prepend(errorElement)
         }
     }
@@ -1027,9 +1135,9 @@
      * @returns {Promise<void>}
      */
     async function showMonthGap(settings) {
-        const attendance = await Attendance.fetch()
+        const attendance = await Attendance.fetch(settings.labels)
         const plan = MonthPlan.load(attendance)
-        const page = new Page()
+        const page = new Page(settings.labels)
 
         page.update(plan, page.read())
         page.watch((time) => page.update(plan, time))
@@ -1037,19 +1145,19 @@
         settings.mountPlan(plan, page)
     }
 
-    /** @returns {void} */
-    function main() {
+    /** @returns {Promise<void>} */
+    async function main() {
         const style = document.createElement("style")
         style.textContent = LAYOUT_STYLE + THEME_STYLE
         document.head.append(style)
 
-        const settings = new Settings()
+        const settings = await Settings.load()
         settings.mount()
 
         setTimeout(() => {
             showMonthGap(settings).catch((error) => {
                 console.error(error)
-                renderError(error)
+                renderError(error, settings.labels)
             })
         }, 100)
     }
