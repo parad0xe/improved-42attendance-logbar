@@ -322,6 +322,17 @@ class Attendance {
     }
 
     setTimeout(() => {
-        showMonthGap()
+        showMonthGap().catch((error) => {
+            console.error(error)
+
+            const summaryElement = document.querySelector("[data-slot='sidebar-inset'] main div:nth-child(2) div:nth-child(1)")
+            if (summaryElement) {
+                const errorElement = document.createElement("span")
+                errorElement.className = "improved-logbar-gap-container"
+                errorElement.title = error.message
+                errorElement.textContent = "gap unavailable"
+                summaryElement.prepend(errorElement)
+            }
+        })
     }, 100)
 })();
