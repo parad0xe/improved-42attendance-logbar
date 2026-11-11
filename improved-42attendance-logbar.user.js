@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Improved 42Attendance Logbar
 // @namespace    https://github.com/parad0xe
-// @version      2026.11.11.1
+// @version      2026.11.12
 // @description  Show the gap with the expected logged time
 // @author       parad0xe
 // @match        https://attendance.42lyon.fr/me
@@ -17,6 +17,8 @@
 
     // CONSTANTES
     const SCRIPT_NAME = "Improved Attendance Logbar"
+    const THEME_STORAGE_KEY = "improved-logbar-theme"
+
     const WORKDAY_MINUTES = 7 * 60
     const CLOSURE_START_HOUR = 8
     const CLOSURE_END_HOUR = 20
@@ -30,7 +32,109 @@
         loggedToday: "[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div > div div > span:nth-child(1)",
     }
 
+    const THEME_STYLE = `
+        html.dark {
+            color-scheme: dark !important;
+        
+            --background: oklch(17% 0.012 260);
+            --foreground: oklch(96% 0.005 260);
+            --card: oklch(21% 0.014 260);
+            --card-foreground: oklch(96% 0.005 260);
+            --popover: oklch(21% 0.014 260);
+            --popover-foreground: oklch(96% 0.005 260);
+            --primary: oklch(92% 0.01 260);
+            --primary-foreground: oklch(21% 0.014 260);
+            --secondary: oklch(27% 0.015 260);
+            --secondary-foreground: oklch(96% 0.005 260);
+            --muted: oklch(27% 0.015 260);
+            --muted-foreground: oklch(71% 0.02 260);
+            --accent: oklch(29% 0.018 260);
+            --accent-foreground: oklch(96% 0.005 260);
+            --destructive: oklch(70% 0.19 22);
+            --border: oklch(100% 0 0 / 9%);
+            --input: oklch(100% 0 0 / 14%);
+            --ring: oklch(56% 0.02 260);
+            --sidebar: oklch(19% 0.013 260);
+            --sidebar-foreground: oklch(96% 0.005 260);
+            --sidebar-primary: oklch(62% 0.19 260);
+            --sidebar-primary-foreground: oklch(98% 0 0);
+            --sidebar-accent: oklch(27% 0.015 260);
+            --sidebar-accent-foreground: oklch(96% 0.005 260);
+            --sidebar-border: oklch(100% 0 0 / 9%);
+            --sidebar-ring: oklch(56% 0.02 260);
+        
+            --shadow-sm: 0 1px 3px 0 #00000066;
+            --shadow: 0 1px 3px 0 #00000066;
+            --shadow-md: 0 2px 6px -1px #00000080;
+            --shadow-lg: 0 4px 10px -2px #00000080;
+        
+            --dark-cerulean: #6c9be0;
+            --cg-blue: #2bb3d4;
+            --violet: #a77bff;
+        
+            --improved-logbar-bonus: #4ade80;
+            --improved-logbar-missing: #f87171;
+            --improved-logbar-expected-bar: #facc1530;
+            --improved-logbar-expected-label: #fde68ab3;
+        }
+    
+        @layer utilities {
+            :where(.dark) .bg-white { background-color: var(--card); }
+            :where(.dark) .bg-neutral-50,
+            :where(.dark) .bg-slate-100,
+            :where(.dark) .bg-slate-200 { background-color: var(--muted); }
+            :where(.dark) .text-black,
+            :where(.dark) .text-neutral-900 { color: var(--foreground); }
+            :where(.dark) .text-neutral-600,
+            :where(.dark) .text-neutral-500,
+            :where(.dark) .text-slate-700,
+            :where(.dark) .text-slate-600 { color: var(--muted-foreground); }
+            :where(.dark) .border-neutral-200,
+            :where(.dark) .border-slate-200 { border-color: var(--border); }
+            :where(.dark) .fill-black { fill: var(--foreground); }
+            :where(.dark) .bg-blue-100,
+            :where(.dark) .bg-blue-200 { background-color: color-mix(in oklab, var(--color-blue-500) 20%, transparent); }
+            :where(.dark) .border-blue-200 { border-color: color-mix(in oklab, var(--color-blue-500) 40%, transparent); }
+            :where(.dark) .text-blue-700 { color: var(--color-blue-400); }
+            :where(.dark) .bg-emerald-100 { background-color: color-mix(in oklab, var(--color-emerald-500) 20%, transparent); }
+            :where(.dark) .border-emerald-200 { border-color: color-mix(in oklab, var(--color-emerald-500) 40%, transparent); }
+            :where(.dark) .text-emerald-700 { color: var(--color-emerald-500); }
+            :where(.dark) span.bg-yellow-400\\/60 {
+                background-color: color-mix(in oklab, var(--color-yellow-400) 20%, transparent);
+                color: var(--color-yellow-400);
+            }
+            :where(.dark) div.bg-yellow-400\\/60 {
+                background-color: color-mix(in oklab, var(--color-amber-400) 55%, transparent);
+            }
+            :where(.dark) div.bg-yellow-400\\/20 {
+                background-color: color-mix(in oklab, var(--color-amber-400) 22%, transparent);
+            }
+        }
+    
+        .improved-logbar-theme-switch {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 100;
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            background: var(--card);
+            color: var(--foreground);
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+        }
+    `
     const LAYOUT_STYLE = `
+        :root {
+            --improved-logbar-bonus: #15803d;
+            --improved-logbar-missing: #612c2c;
+            --improved-logbar-expected-bar: #ffca0033;
+            --improved-logbar-expected-label: #4e2f08a1;
+        }
+        
         .improved-logbar-summary { flex-wrap: wrap; }
 
         .improved-logbar-expected-bar {
@@ -41,13 +145,16 @@
             top: 0;
             height: 100%;
             border-radius: 9999px;
-            background: #ffca0033;
+            background: var(--improved-logbar-expected-bar);
             transition: width 150ms cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .improved-logbar-expected-bar-label { margin-right: 10px; z-index: 10; font-size: 0.9rem; }
+        .improved-logbar-expected-bar-label { margin-right: 10px; z-index: 10; font-size: 0.9rem; color: var(--improved-logbar-expected-label); }
 
         .improved-logbar-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; }
         .improved-logbar-gap-days { padding: 0 0.5rem; }
+        
+        .improved-logbar-bonus { color: var(--improved-logbar-bonus); }
+        .improved-logbar-missing { color: var(--improved-logbar-missing); }
 
         @media (min-width: 768px) {
             .improved-logbar-summary { flex-wrap: nowrap; }
@@ -169,6 +276,33 @@
         return read(0)
     }
 
+    /**
+     * @returns {boolean} whether the dark theme was chosen, or else whether the system uses one
+     */
+    function isDarkThemeChosen() {
+        try {
+            const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+            if (savedTheme !== null) {
+                return savedTheme === "dark"
+            }
+        } catch {
+            // The storage can be unavailable, for example in a private window.
+        }
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+    }
+
+    /**
+     * @param {boolean} isDark
+     * @returns {void}
+     */
+    function saveThemeChoice(isDark) {
+        try {
+            localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light")
+        } catch {
+            // Without storage, the choice lasts until the page is reloaded.
+        }
+    }
+
 
     class Attendance {
         /**
@@ -260,6 +394,11 @@
             return new Attendance(data)
         }
     }
+    class Theme {
+        constructor(data) {
+
+        }
+    }
 
 
     /**
@@ -318,7 +457,6 @@
         progressTrackElement.appendChild(expectedProgressBarElement)
 
         const expectedLabelElement = document.createElement("span")
-        expectedLabelElement.style.color = "#4e2f08a1"
         expectedLabelElement.classList.add("improved-logbar-expected-bar-label")
         expectedLabelElement.textContent = `${formatMinutes(expectedMinutes)}`
         expectedProgressBarElement.append(expectedLabelElement)
@@ -342,11 +480,11 @@
         const gapDirection = (expectedMinutes <= loggedTotalMinutes) ? {
             daysLabel: "bonus",
             sign: "+",
-            color: "#15803d"
+            className: "improved-logbar-bonus"
         } : {
             daysLabel: "missing",
             sign: "-",
-            color: "#612c2c"
+            className: "improved-logbar-missing"
         }
 
         const gapContainer = document.createElement("div")
@@ -355,6 +493,7 @@
 
         const gapTimeLabelElement = document.createElement("strong")
         gapTimeLabelElement.style.color = gapDirection.color
+        gapTimeLabelElement.classList.add(gapDirection.className)
         gapTimeLabelElement.title = `expected ${formatMinutes(expectedMinutes)}`
         gapTimeLabelElement.textContent = `${gapDirection.sign}${formatMinutes(gapMinutes)}`
         gapContainer.prepend(gapTimeLabelElement)
@@ -362,6 +501,7 @@
         const gapDaysLabelElement = document.createElement("span")
         gapDaysLabelElement.className = "improved-logbar-gap-days"
         gapDaysLabelElement.style.color = gapDirection.color
+        gapDaysLabelElement.classList.add(gapDirection.className)
         gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
         gapContainer.append(gapDaysLabelElement)
     }
@@ -379,6 +519,38 @@
             errorElement.textContent = "gap unavailable"
             summaryElement.prepend(errorElement)
         }
+    }
+
+    /**
+     * @returns {void}
+     */
+    function mountThemeSwitcher() {
+        let isDark = isDarkThemeChosen()
+
+        const switchElement = document.createElement("button")
+        switchElement.type = "button"
+        switchElement.className = "improved-logbar-theme-switch"
+        switchElement.title = "Dark theme"
+        switchElement.setAttribute("aria-label", "Dark theme")
+
+        const applyTheme = () => {
+            const root = document.documentElement
+            if (root.classList.contains("dark") !== isDark) {
+                root.classList.toggle("dark", isDark)
+            }
+            switchElement.textContent = isDark ? "☀" : "☾"
+            switchElement.setAttribute("aria-pressed", String(isDark))
+        }
+
+        switchElement.addEventListener("click", () => {
+            isDark = !isDark
+            saveThemeChoice(isDark)
+            applyTheme()
+        })
+        document.body.append(switchElement)
+
+        applyTheme()
+        new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
     }
 
 
@@ -402,9 +574,10 @@
     }
 
     const style = document.createElement("style")
-    style.textContent = LAYOUT_STYLE
+    style.textContent = LAYOUT_STYLE + THEME_STYLE
     document.head.append(style)
 
+    mountThemeSwitcher()
     setTimeout(() => {
         showMonthGap().catch((error) => {
             console.error(error)
