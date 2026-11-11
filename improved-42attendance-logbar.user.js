@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Improved 42Attendance Logbar
 // @namespace    https://github.com/parad0xe
-// @version      2026.11.11.1
+// @version      2026.11.12
 // @description  Show the gap with the expected logged time
 // @author       parad0xe
 // @match        https://attendance.42lyon.fr/me
