@@ -17,7 +17,10 @@
 
     // CONSTANTES
     const SCRIPT_NAME = "Improved Attendance Logbar"
+
     const THEME_STORAGE_KEY = "improved-logbar-theme"
+    const PLAN_STORAGE_KEY = "improved-logbar-plan"
+    const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
     const WORKDAY_MINUTES = 7 * 60
     const CLOSURE_START_HOUR = 8
@@ -78,6 +81,15 @@
             --improved-logbar-missing: #f87171;
             --improved-logbar-expected-bar: #facc1530;
             --improved-logbar-expected-label: #fde68ab3;
+
+            --improved-logbar-day-border: oklch(100% 0 0 / 12%);
+            --improved-logbar-day-hover: oklch(100% 0 0 / 6%);
+            --improved-logbar-day-off-background: #3b82f633;
+            --improved-logbar-day-off-border: #3b82f680;
+            --improved-logbar-day-off-text: #93c5fd;
+            --improved-logbar-past-day-border: oklch(100% 0 0 / 5%);
+            --improved-logbar-past-day-text: oklch(100% 0 0 / 30%);
+            --improved-logbar-past-day-off-background: oklch(100% 0 0 / 6%);
         }
     
         @layer utilities {
@@ -130,6 +142,15 @@
             --improved-logbar-missing: #612c2c;
             --improved-logbar-expected-bar: #ffca0033;
             --improved-logbar-expected-label: #4e2f08a1;
+
+            --improved-logbar-day-border: #e4e4e7;
+            --improved-logbar-day-hover: #f4f4f5;
+            --improved-logbar-day-off-background: #dbeafe;
+            --improved-logbar-day-off-border: #93c5fd;
+            --improved-logbar-day-off-text: #1d4ed8;
+            --improved-logbar-past-day-border: #f4f4f5;
+            --improved-logbar-past-day-text: #a1a1aa;
+            --improved-logbar-past-day-off-background: #f4f4f5;
         }
         
         .improved-logbar-summary { flex-wrap: wrap; }
@@ -162,7 +183,17 @@
             color: var(--sidebar-foreground);
         }
         [data-collapsible="icon"] .improved-logbar-settings { display: none; }
+        .improved-logbar-settings-section { display: flex; flex-direction: column; gap: 0.5rem; }
+        .improved-logbar-settings-title { font-size: 0.75rem; font-weight: 500; color: var(--muted-foreground); }
         .improved-logbar-settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+        .improved-logbar-settings-row input {
+            width: 4rem;
+            padding: 0.125rem 0.375rem;
+            border: 1px solid var(--input);
+            border-radius: 0.375rem;
+            background: transparent;
+            color: inherit;
+        }
 
         .improved-logbar-credit { font-size: 0.75rem; color: var(--muted-foreground); }
         .improved-logbar-credit:hover { text-decoration: underline; }
@@ -199,6 +230,12 @@
      * @property {number} loggedTodayMinutes
      */
 
+    /**
+     * @typedef {Object} MonthPlanData
+     * @property {number[]} daysOff - the days of the month, from 1, with no planned time
+     * @property {number} dailyMinutes - the time planned on each remaining day
+     */
+
 
     // HELPERS
     /**
@@ -212,10 +249,21 @@
 
     /**
      * @param {number} minutes
-     * @returns {string} the duration as HH:MM
+     * @returns {string} the duration as HH:MM, with a minus sign when negative
      */
     function formatMinutes(minutes) {
-        return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+        const sign = minutes < 0 ? "-" : ""
+        const absoluteMinutes = Math.abs(minutes)
+        return `${sign}${String(Math.floor(absoluteMinutes / 60)).padStart(2, '0')}:${String(absoluteMinutes % 60).padStart(2, '0')}`
+    }
+
+    /**
+     * @param {number} year
+     * @param {number} monthIndex - 0 for January
+     * @returns {number}
+     */
+    function getDaysInMonth(year, monthIndex) {
+        return new Date(year, monthIndex + 1, 0).getDate()
     }
 
     /**
@@ -359,25 +407,13 @@
         }
 
         /**
-         * @returns {number} the minutes expected by today, from the open working days
+         * Reports whether time is expected on date: a workday when the campus is not closed.
+         * @param {Date} date
+         * @returns {boolean}
          */
-        getExpectedMinutes() {
-            const today = new Date()
-            const endOfToday = new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate() + 1
-            )
-
-            let elapsedWorkingDays = 0
-
-            for (let date of this.calendar.workdays) {
-                if (date < endOfToday && !this.isClosedDay(date)) {
-                    elapsedWorkingDays++
-                }
-            }
-
-            return elapsedWorkingDays * WORKDAY_MINUTES
+        isOpenWorkday(date) {
+            const isWorkday = this.calendar.workdays.some((workday) => workday.toDateString() === date.toDateString())
+            return isWorkday && !this.isClosedDay(date)
         }
 
         /**
@@ -401,6 +437,119 @@
                 .map((node) => decodeDevalue(node.data)))
 
             return new Attendance(data)
+        }
+    }
+
+    class MonthPlan {
+        /**
+         * @param {number} year
+         * @param {number} monthIndex - 0 for January
+         * @param {Set<number>} daysOff - the days of the month, from 1, with no planned time
+         * @param {number} dailyMinutes - the time planned on each remaining day
+         */
+        constructor(year, monthIndex, daysOff, dailyMinutes) {
+            /** @type {number} */
+            this.year = year
+            /** @type {number} */
+            this.monthIndex = monthIndex
+            /** @type {Set<number>} */
+            this.daysOff = daysOff
+            /** @type {number} */
+            this.dailyMinutes = dailyMinutes
+        }
+
+        /**
+         * @param {number} year
+         * @param {number} monthIndex
+         * @returns {string} the storage key of the plan of this month
+         */
+        static storageKey(year, monthIndex) {
+            return `${PLAN_STORAGE_KEY}-${year}-${String(monthIndex + 1).padStart(2, '0')}`
+        }
+
+        /**
+         * Loads the saved plan of the month of attendance, or else a plan with its days that are not open workdays as days off.
+         * @param {Attendance} attendance
+         * @returns {MonthPlan}
+         */
+        static load(attendance) {
+            const { year, monthIndex } = attendance.calendar
+
+            try {
+                const savedPlan = localStorage.getItem(MonthPlan.storageKey(year, monthIndex))
+                if (savedPlan !== null) {
+                    /** @type {MonthPlanData} */
+                    const { daysOff, dailyMinutes } = JSON.parse(savedPlan)
+                    if (Array.isArray(daysOff) && daysOff.every(Number.isInteger) && Number.isFinite(dailyMinutes) && dailyMinutes >= 0) {
+                        return new MonthPlan(year, monthIndex, new Set(daysOff), dailyMinutes)
+                    }
+                }
+            } catch {
+                // The storage can be unavailable, or the saved plan unreadable.
+            }
+
+            const daysOff = new Set()
+            for (let day = 1; day <= getDaysInMonth(year, monthIndex); day++) {
+                if (!attendance.isOpenWorkday(new Date(year, monthIndex, day))) {
+                    daysOff.add(day)
+                }
+            }
+
+            return new MonthPlan(year, monthIndex, daysOff, WORKDAY_MINUTES)
+        }
+
+        /**
+         * @returns {void}
+         */
+        save() {
+            /** @type {MonthPlanData} */
+            const storedPlan = {
+                daysOff: [...this.daysOff],
+                dailyMinutes: this.dailyMinutes,
+            }
+
+            try {
+                localStorage.setItem(MonthPlan.storageKey(this.year, this.monthIndex), JSON.stringify(storedPlan))
+            } catch {
+                // Without storage, the plan lasts until the page is reloaded.
+            }
+        }
+
+        /**
+         * @param {number} day - the day of the month, from 1
+         * @returns {void}
+         */
+        toggleDayOff(day) {
+            if (this.daysOff.has(day)) {
+                this.daysOff.delete(day)
+            } else {
+                this.daysOff.add(day)
+            }
+        }
+
+        /**
+         * @returns {number} the days after today that are not days off
+         */
+        countRemainingDays() {
+            const now = new Date()
+
+            let remainingDays = 0
+            for (let day = 1; day <= getDaysInMonth(this.year, this.monthIndex); day++) {
+                const date = new Date(this.year, this.monthIndex, day)
+                if (date > now && !this.daysOff.has(day)) {
+                    remainingDays++
+                }
+            }
+
+            return remainingDays
+        }
+
+        /**
+         * @param {number} monthGoalMinutes
+         * @returns {number} the minutes to have logged by today to reach the goal with the planned time
+         */
+        getExpectedMinutes(monthGoalMinutes) {
+            return monthGoalMinutes - this.countRemainingDays() * this.dailyMinutes
         }
     }
 
@@ -457,14 +606,15 @@
         }
 
         /**
-         * Redraws the expected bar and the gap.
-         * @param {number} expectedMinutes
+         * Redraws the expected bar and the gap from plan.
+         * @param {MonthPlan} plan
          * @param {PageTime} time
          * @returns {void}
          */
-        update(expectedMinutes, time) {
+        update(plan, time) {
+            const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
             this.renderExpectedBar(expectedMinutes, time)
-            this.renderGap(expectedMinutes, time)
+            this.renderGap(expectedMinutes, plan.dailyMinutes, time)
         }
 
         /**
@@ -518,10 +668,11 @@
         /**
          * Replaces the gap, shown only while the goal of the month is not reached.
          * @param {number} expectedMinutes
+         * @param {number} dailyMinutes - the length of a day in the gap in days, hidden when 0
          * @param {PageTime} time
          * @returns {void}
          */
-        renderGap(expectedMinutes, time) {
+        renderGap(expectedMinutes, dailyMinutes, time) {
             this.summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
 
             if (time.loggedMonthMinutes >= time.monthGoalMinutes) { return }
@@ -530,7 +681,7 @@
 
             const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
             const gapMinutes = Math.abs(expectedMinutes - loggedTotalMinutes)
-            const gapDays = gapMinutes / WORKDAY_MINUTES
+            const gapDays = gapMinutes / dailyMinutes
             const gapDirection = (expectedMinutes <= loggedTotalMinutes) ? {
                 daysLabel: "bonus",
                 sign: "+",
@@ -551,11 +702,13 @@
             gapTimeLabelElement.textContent = `${gapDirection.sign}${formatMinutes(gapMinutes)}`
             gapContainer.prepend(gapTimeLabelElement)
 
-            const gapDaysLabelElement = document.createElement("span")
-            gapDaysLabelElement.className = "improved-logbar-gap-days"
-            gapDaysLabelElement.classList.add(gapDirection.className)
-            gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
-            gapContainer.append(gapDaysLabelElement)
+            if (dailyMinutes > 0) {
+                const gapDaysLabelElement = document.createElement("span")
+                gapDaysLabelElement.className = "improved-logbar-gap-days"
+                gapDaysLabelElement.classList.add(gapDirection.className)
+                gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
+                gapContainer.append(gapDaysLabelElement)
+            }
         }
 
         /**
@@ -584,7 +737,7 @@
     }
 
     /**
-     * The settings block at the bottom of the sidebar: the theme and the credit.
+     * The settings block at the bottom of the sidebar: the plan, the theme and the credit.
      */
     class Settings {
         constructor() {
@@ -658,8 +811,197 @@
             applyTheme()
             new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
         }
+
+        /**
+         * Adds the days off and the planned hours of plan, and redraws page after each change.
+         * @param {MonthPlan} plan
+         * @param {Page} page
+         * @returns {void}
+         */
+        mountPlan(plan, page) {
+            const sectionElement = document.createElement("div")
+            sectionElement.className = "improved-logbar-settings-section"
+
+            const titleElement = document.createElement("span")
+            titleElement.className = "improved-logbar-settings-title"
+            titleElement.textContent = "Days off"
+
+            const calendarElement = document.createElement("improved-logbar-calendar")
+            calendarElement.setPlan(plan)
+
+            const hoursRowElement = document.createElement("label")
+            hoursRowElement.className = "improved-logbar-settings-row"
+            hoursRowElement.textContent = "Hours per remaining day"
+
+            const hoursInputElement = document.createElement("input")
+            hoursInputElement.type = "number"
+            hoursInputElement.min = "0"
+            hoursInputElement.max = "24"
+            hoursInputElement.step = "0.5"
+            hoursInputElement.value = String(plan.dailyMinutes / 60)
+            hoursRowElement.append(hoursInputElement)
+
+            const savePlan = () => {
+                plan.save()
+                page.update(plan, page.read())
+            }
+
+            calendarElement.addEventListener("change", savePlan)
+            hoursInputElement.addEventListener("change", () => {
+                const hours = hoursInputElement.valueAsNumber
+                if (!Number.isFinite(hours) || hours < 0 || hours > 24) {
+                    hoursInputElement.value = String(plan.dailyMinutes / 60)
+                    return
+                }
+                plan.dailyMinutes = Math.round(hours * 60)
+                savePlan()
+            })
+
+            sectionElement.append(titleElement, calendarElement, hoursRowElement)
+            this.settingsElement.prepend(sectionElement)
+        }
     }
 
+
+
+    // CALENDAR WIDGET
+    /**
+     * Shows the days of a month plan and toggles its days off, then dispatches change.
+     */
+    class CalendarWidget extends HTMLElement {
+        constructor() {
+            super();
+            /**
+             * The plan whose days off are shown.
+             * @type {MonthPlan | null}
+             */
+            this.plan = null
+            /** @type {ShadowRoot} */
+            this.shadow = this.attachShadow({ mode: 'open' })
+            /**
+             * The grid of the days, created once the widget is in the page.
+             * @type {Element | null}
+             */
+            this.calendarElement = null
+        }
+
+        /** @returns {void} */
+        connectedCallback() {
+            this.shadow.innerHTML = `
+            <style>
+                .calendar {
+                    width: 100%;
+                    display: grid;
+                    grid-template-columns: repeat(7, 1fr);
+                    gap: 2px;
+                }
+
+                .calendar-weekday {
+                    text-align: center;
+                    font-size: 0.625rem;
+                    color: var(--muted-foreground);
+                }
+
+                .calendar-day {
+                    padding: 4px 0;
+                    border: 1px solid var(--improved-logbar-day-border);
+                    border-radius: 4px;
+                    text-align: center;
+                    font-size: 0.75rem;
+                    color: var(--sidebar-foreground);
+                    cursor: pointer;
+                    transition: background-color 150ms, border-color 150ms;
+                }
+                .calendar-day:not(.past):not(.day-off):hover {
+                    background: var(--improved-logbar-day-hover);
+                }
+                .calendar-day.day-off {
+                    background: var(--improved-logbar-day-off-background);
+                    border-color: var(--improved-logbar-day-off-border);
+                    color: var(--improved-logbar-day-off-text);
+                    font-weight: 500;
+                }
+                .calendar-day.day-off:not(.past):hover {
+                    border-color: var(--improved-logbar-day-off-text);
+                }
+                .calendar-day.past {
+                    border-color: var(--improved-logbar-past-day-border);
+                    color: var(--improved-logbar-past-day-text);
+                    cursor: default;
+                }
+                .calendar-day.past.day-off {
+                    background: var(--improved-logbar-past-day-off-background);
+                    font-weight: normal;
+                }
+            </style>
+
+            <div class="calendar"></div>
+        `
+            this.calendarElement = this.shadow.querySelector(".calendar")
+            this.render()
+        }
+
+        /**
+         * @param {MonthPlan} plan
+         * @returns {void}
+         */
+        setPlan(plan) {
+            this.plan = plan
+            this.render()
+        }
+
+        /**
+         * Draws the month of the plan in weeks from Monday.
+         * @returns {void}
+         */
+        render() {
+            if (!this.plan || !this.calendarElement) { return }
+
+            this.calendarElement.replaceChildren()
+
+            for (const weekday of WEEKDAY_LABELS) {
+                const weekdayElement = document.createElement("div")
+                weekdayElement.classList.add("calendar-weekday")
+                weekdayElement.textContent = weekday
+                this.calendarElement.append(weekdayElement)
+            }
+
+            const firstWeekday = (new Date(this.plan.year, this.plan.monthIndex, 1).getDay() + 6) % 7
+            for (let i = 0; i < firstWeekday; i++) {
+                this.calendarElement.append(document.createElement("div"))
+            }
+
+            for (let day = 1; day <= getDaysInMonth(this.plan.year, this.plan.monthIndex); day++) {
+                this.calendarElement.append(this.renderDay(day))
+            }
+        }
+
+        /**
+         * Only the days after today can be toggled, as the others no longer change the gap.
+         * @param {number} day - the day of the month, from 1
+         * @returns {HTMLDivElement}
+         */
+        renderDay(day) {
+            const dayElement = document.createElement("div")
+            dayElement.classList.add("calendar-day")
+            dayElement.classList.toggle("day-off", this.plan.daysOff.has(day))
+            dayElement.textContent = String(day)
+
+            const isPast = new Date(this.plan.year, this.plan.monthIndex, day) <= new Date()
+            if (isPast) {
+                dayElement.classList.add("past")
+            } else {
+                dayElement.addEventListener("click", () => {
+                    this.plan.toggleDayOff(day)
+                    dayElement.classList.toggle("day-off", this.plan.daysOff.has(day))
+                    this.dispatchEvent(new Event("change"))
+                })
+            }
+
+            return dayElement
+        }
+    }
+    customElements.define('improved-logbar-calendar', CalendarWidget)
 
 
     // MAIN
@@ -681,14 +1023,18 @@
     }
 
     /**
+     * @param {Settings} settings
      * @returns {Promise<void>}
      */
-    async function showMonthGap() {
+    async function showMonthGap(settings) {
         const attendance = await Attendance.fetch()
+        const plan = MonthPlan.load(attendance)
         const page = new Page()
 
-        page.update(attendance.getExpectedMinutes(), page.read())
-        page.watch((time) => page.update(attendance.getExpectedMinutes(), time))
+        page.update(plan, page.read())
+        page.watch((time) => page.update(plan, time))
+
+        settings.mountPlan(plan, page)
     }
 
     /** @returns {void} */
@@ -701,7 +1047,7 @@
         settings.mount()
 
         setTimeout(() => {
-            showMonthGap().catch((error) => {
+            showMonthGap(settings).catch((error) => {
                 console.error(error)
                 renderError(error)
             })
