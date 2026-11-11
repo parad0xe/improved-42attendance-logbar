@@ -104,12 +104,38 @@
             color: "#612c2c"
         }
 
+        const style = document.createElement("style")
+        style.textContent = `
+            .improved-logbar-summary { flex-wrap: wrap; }
+
+            .improved-logbar-expected-bar {
+                position: absolute;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                top: 0;
+                height: 100%;
+                border-radius: 9999px;
+                background: #ffca0033;
+                transition: width 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .improved-logbar-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; }
+            .improved-logbar-gap-days { padding: 0 0.5rem; }
+
+            @media (min-width: 768px) {
+                .improved-logbar-summary { flex-wrap: nowrap; }
+                .improved-logbar-gap-container { flex-basis: auto; margin-bottom: 0; }
+            }
+        `
+        document.head.append(style)
+        summaryElement.classList.add("improved-logbar-summary")
+
 
         if (expectedMinutes > loggedTotalMinutes) {
             let expectedProgressBarElement = document.createElement("div")
-            expectedProgressBarElement.className += "h-full rounded-full transition-[width] absolute top-0 z-[2] flex flex-col items-center justify-end"
+            expectedProgressBarElement.classList.add("improved-logbar-expected-bar")
             expectedProgressBarElement.style.width = `0%`
-            expectedProgressBarElement.style.background = "#ffca0033"
             progressTrackElement.appendChild(expectedProgressBarElement)
 
             setTimeout(() => {
@@ -117,17 +143,21 @@
             }, 30)
         }
 
-        const gapDaysLabelElement = document.createElement("span")
-        gapDaysLabelElement.className = "pl-2 pr-2"
-        gapDaysLabelElement.style.color = gapDirection.color
-        gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
-        summaryElement.prepend(gapDaysLabelElement)
+        const gapContainer = document.createElement("div")
+        gapContainer.className = "improved-logbar-gap-container"
+        summaryElement.prepend(gapContainer)
 
         const gapTimeLabelElement = document.createElement("strong")
         gapTimeLabelElement.style.color = gapDirection.color
         gapTimeLabelElement.title = `expected ${formatMinutes(expectedMinutes)}`
         gapTimeLabelElement.textContent = `${gapDirection.sign}${formatMinutes(gapMinutes)}`
-        summaryElement.prepend(gapTimeLabelElement)
+        gapContainer.prepend(gapTimeLabelElement)
+
+        const gapDaysLabelElement = document.createElement("span")
+        gapDaysLabelElement.className = "improved-logbar-gap-days"
+        gapDaysLabelElement.style.color = gapDirection.color
+        gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
+        gapContainer.append(gapDaysLabelElement)
     }
 
     setTimeout(() => {
