@@ -218,11 +218,19 @@ class Attendance {
             return elapsedWorkingDays * WORKDAY_MINUTES
         }
 
+        /**
+         * @param {string} text - a duration such as "26:33"
+         * @returns {number}
+         */
         function parseMinutes(text) {
             let [hours, minutes] = text.split(":").map((x) => parseInt(x))
             return hours * 60 + minutes
         }
 
+        /**
+         * @param {string} selector
+         * @returns {[string, boolean]} the text of the element, and whether the element exists
+         */
         function getTimeText(selector) {
             const element = document.querySelector(selector)
             if (!element) {
@@ -231,6 +239,10 @@ class Attendance {
             return [element.textContent, true]
         }
 
+        /**
+         * @param {number} minutes
+         * @returns {string} the duration as HH:MM
+         */
         function formatMinutes(minutes) {
             return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
         }
