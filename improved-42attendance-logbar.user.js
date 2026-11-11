@@ -18,6 +18,33 @@
     const SCRIPT_NAME = "Improved Attendance Logbar"
     const WORKDAY_MINUTES = 7 * 60
 
+    const style = document.createElement("style")
+    style.textContent = `
+            .improved-logbar-summary { flex-wrap: wrap; }
+
+            .improved-logbar-expected-bar {
+                position: absolute;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                top: 0;
+                height: 100%;
+                border-radius: 9999px;
+                background: #ffca0033;
+                transition: width 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .improved-logbar-expected-bar-label { margin-right: 10px; z-index: 10; font-size: 0.9rem; }
+
+            .improved-logbar-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; }
+            .improved-logbar-gap-days { padding: 0 0.5rem; }
+
+            @media (min-width: 768px) {
+                .improved-logbar-summary { flex-wrap: nowrap; }
+                .improved-logbar-gap-container { flex-basis: auto; margin-bottom: 0; }
+            }
+        `
+    document.head.append(style)
+
     function showMonthGap() {
         function getExpectedMinutes() {
             const today = new Date()
@@ -104,34 +131,7 @@
             color: "#612c2c"
         }
 
-        const style = document.createElement("style")
-        style.textContent = `
-            .improved-logbar-summary { flex-wrap: wrap; }
-
-            .improved-logbar-expected-bar {
-                position: absolute;
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-                top: 0;
-                height: 100%;
-                border-radius: 9999px;
-                background: #ffca0033;
-                transition: width 150ms cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            .improved-logbar-expected-bar-label { margin-right: 10px; z-index: 10; font-size: 0.9rem; }
-
-            .improved-logbar-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; }
-            .improved-logbar-gap-days { padding: 0 0.5rem; }
-
-            @media (min-width: 768px) {
-                .improved-logbar-summary { flex-wrap: nowrap; }
-                .improved-logbar-gap-container { flex-basis: auto; margin-bottom: 0; }
-            }
-        `
-        document.head.append(style)
         summaryElement.classList.add("improved-logbar-summary")
-
 
         if (expectedMinutes > loggedTotalMinutes) {
             let expectedProgressBarElement = document.createElement("div")
