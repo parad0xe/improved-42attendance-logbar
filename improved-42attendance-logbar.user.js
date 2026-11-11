@@ -24,6 +24,7 @@
     const CLOSURE_END_HOUR = 20
 
     const SELECTORS = {
+        sidebarContent: "[data-slot='sidebar-content']",
         main: "[data-slot='sidebar-inset'] main",
         summary: "[data-slot='sidebar-inset'] main div:nth-of-type(2) div:nth-of-type(1)",
         progressTrack: "[data-slot='sidebar-inset'] main div:nth-of-type(2) div:nth-of-type(2) div:nth-of-type(2)",
@@ -113,19 +114,14 @@
         }
     
         .improved-logbar-theme-switch {
-            position: fixed;
-            right: 1rem;
-            bottom: 1rem;
-            z-index: 100;
-            width: 2.5rem;
-            height: 2.5rem;
+            width: 2rem;
+            height: 2rem;
             border: 1px solid var(--border);
             border-radius: 9999px;
             background: var(--card);
             color: var(--foreground);
-            font-size: 1.1rem;
+            font-size: 1rem;
             cursor: pointer;
-            box-shadow: var(--shadow-md);
         }
     `
     const LAYOUT_STYLE = `
@@ -157,15 +153,18 @@
         .improved-logbar-bonus { color: var(--improved-logbar-bonus); }
         .improved-logbar-missing { color: var(--improved-logbar-missing); }
         
-        .improved-logbar-credit {
-            position: fixed;
-            right: 4rem;
-            bottom: 1rem;
-            z-index: 100;
-            line-height: 2.5rem;
-            font-size: 0.75rem;
-            color: var(--muted-foreground);
+        .improved-logbar-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.875rem;
+            color: var(--sidebar-foreground);
         }
+        [data-collapsible="icon"] .improved-logbar-settings { display: none; }
+        .improved-logbar-settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+
+        .improved-logbar-credit { font-size: 0.75rem; color: var(--muted-foreground); }
         .improved-logbar-credit:hover { text-decoration: underline; }
 
         @media (min-width: 768px) {
@@ -584,45 +583,81 @@
         }
     }
 
-
     /**
-     * @returns {void}
+     * The settings block at the bottom of the sidebar: the theme and the credit.
      */
-    function mountThemeSwitcher() {
-        let isDark = isDarkThemeChosen()
-
-        const switchElement = document.createElement("button")
-        switchElement.type = "button"
-        switchElement.className = "improved-logbar-theme-switch"
-        switchElement.title = "Dark theme"
-        switchElement.setAttribute("aria-label", "Dark theme")
-
-        const applyTheme = () => {
-            const root = document.documentElement
-            if (root.classList.contains("dark") !== isDark) {
-                root.classList.toggle("dark", isDark)
-            }
-            switchElement.textContent = isDark ? "☀" : "☾"
-            switchElement.setAttribute("aria-pressed", String(isDark))
+    class Settings {
+        constructor() {
+            /**
+             * The block in the sidebar that holds every setting.
+             * @type {HTMLElement}
+             */
+            this.settingsElement = document.createElement("section")
+            this.settingsElement.className = "improved-logbar-settings"
         }
 
-        switchElement.addEventListener("click", () => {
-            isDark = !isDark
-            saveThemeChoice(isDark)
+        /**
+         * Adds the theme and the credit, and keeps the block at the bottom of the sidebar.
+         * @returns {void}
+         */
+        mount() {
+            this.mountThemeSwitch()
+
+            const creditElement = document.createElement("a")
+            creditElement.className = "improved-logbar-credit"
+            creditElement.href = "https://github.com/parad0xe"
+            creditElement.target = "_blank"
+            creditElement.rel = "noopener noreferrer"
+            creditElement.textContent = "@nlallema"
+            this.settingsElement.append(creditElement)
+
+            // The sidebar content can be rendered again, for example when the mobile sidebar opens.
+            const attach = () => {
+                const sidebarContentElement = document.querySelector(SELECTORS.sidebarContent)
+                if (sidebarContentElement && !sidebarContentElement.contains(this.settingsElement)) {
+                    sidebarContentElement.append(this.settingsElement)
+                }
+            }
+            attach()
+            new MutationObserver(attach).observe(document.body, { childList: true, subtree: true })
+        }
+
+        /**
+         * @returns {void}
+         */
+        mountThemeSwitch() {
+            let isDark = isDarkThemeChosen()
+
+            const rowElement = document.createElement("div")
+            rowElement.className = "improved-logbar-settings-row"
+            rowElement.textContent = "Theme"
+
+            const switchElement = document.createElement("button")
+            switchElement.type = "button"
+            switchElement.className = "improved-logbar-theme-switch"
+            switchElement.title = "Theme"
+            switchElement.setAttribute("aria-label", "Theme")
+
+            const applyTheme = () => {
+                const root = document.documentElement
+                if (root.classList.contains("dark") !== isDark) {
+                    root.classList.toggle("dark", isDark)
+                }
+                switchElement.textContent = isDark ? "☀" : "☾"
+                switchElement.setAttribute("aria-pressed", String(isDark))
+            }
+
+            switchElement.addEventListener("click", () => {
+                isDark = !isDark
+                saveThemeChoice(isDark)
+                applyTheme()
+            })
+            rowElement.append(switchElement)
+            this.settingsElement.append(rowElement)
+
             applyTheme()
-        })
-        document.body.append(switchElement)
-
-        const creditElement = document.createElement("a")
-        creditElement.className = "improved-logbar-credit"
-        creditElement.href = "https://github.com/parad0xe"
-        creditElement.target = "_blank"
-        creditElement.rel = "noopener noreferrer"
-        creditElement.textContent = "@nlallema"
-        document.body.append(creditElement)
-
-        applyTheme()
-        new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
+            new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
+        }
     }
 
 
@@ -662,7 +697,9 @@
         style.textContent = LAYOUT_STYLE + THEME_STYLE
         document.head.append(style)
 
-        mountThemeSwitcher()
+        const settings = new Settings()
+        settings.mount()
+
         setTimeout(() => {
             showMonthGap().catch((error) => {
                 console.error(error)
