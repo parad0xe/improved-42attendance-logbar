@@ -14,6 +14,8 @@
 
 const SCRIPT_NAME = "Improved Attendance Logbar"
 const WORKDAY_MINUTES = 7 * 60
+const CLOSURE_START_HOUR = 8
+const CLOSURE_END_HOUR = 20
 
 /**
  * @typedef {Object} AttendanceCalendar
@@ -22,12 +24,23 @@ const WORKDAY_MINUTES = 7 * 60
  * @property {Date[]} workdays - the working days of the month, without weekends and public holidays
  */
 
+/**
+ * @typedef {Object} AttendanceClosure
+ * @property {Date} beginAt
+ * @property {Date} endAt
+ */
+
+/**
+ * @typedef {Object} AttendanceHistory
+ * @property {AttendanceClosure[]} closures - the times when the campus is closed
+ */
+
 class Attendance {
     /**
      * @param {Record<string, any>} data - the decoded data of the /me page
      */
     constructor(data) {
-        const { calendar } = data
+        const { calendar, history } = data
 
         if (!Array.isArray(calendar?.workdays) || !calendar.workdays.every((day) => day instanceof Date)) {
             throw new Error(`${SCRIPT_NAME}: the working days of the month are missing, the page may have changed`)
@@ -38,6 +51,11 @@ class Attendance {
             year: calendar.year,
             monthIndex: calendar.monthIndex,
             workdays: calendar.workdays,
+        }
+
+        /** @type {AttendanceHistory} */
+        this.history = {
+            closures: history?.closures ?? [],
         }
     }
 
@@ -157,7 +175,29 @@ class Attendance {
         const attendance = await Attendance.fetch()
 
         /**
-         * @returns {number} the minutes expected by today, from the working days
+         * Reports whether closures cover a full workday between 08:00 and 20:00, as on the site.
+         * @param {Date} workday
+         * @param {AttendanceClosure[]} closures
+         * @returns {boolean}
+         */
+        function isClosedDay(workday, closures) {
+            const workdayStart = new Date(workday.getFullYear(), workday.getMonth(), workday.getDate(), CLOSURE_START_HOUR)
+            const workdayEnd = new Date(workday.getFullYear(), workday.getMonth(), workday.getDate(), CLOSURE_END_HOUR)
+
+            let closedMinutes = 0
+            for (const closure of closures) {
+                const start = closure.beginAt > workdayStart ? closure.beginAt : workdayStart
+                const end = closure.endAt < workdayEnd ? closure.endAt : workdayEnd
+                if (end > start) {
+                    closedMinutes += (end - start) / (60 * 1000)
+                }
+            }
+
+            return closedMinutes >= WORKDAY_MINUTES
+        }
+
+        /**
+         * @returns {number} the minutes expected by today, from the open working days
          */
         function getExpectedMinutes() {
             const today = new Date()
@@ -170,7 +210,7 @@ class Attendance {
             let elapsedWorkingDays = 0
 
             for (let date of attendance.calendar.workdays) {
-                if (date < endOfToday) {
+                if (date < endOfToday && !isClosedDay(date, attendance.history.closures)) {
                     elapsedWorkingDays++
                 }
             }
