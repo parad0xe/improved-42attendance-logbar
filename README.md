@@ -2,6 +2,13 @@
 
 Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bonus or missing time compared with the time expected by today
 
+## Features
+
+- Shows your bonus or missing time, in hours and in days, compared with 7 hours per working day elapsed in the month, without weekends, public holidays and campus closures
+- Shows the time expected by today on the progress bar
+- The gap updates by itself when your logged time changes, without reloading the page
+- A button at the bottom right switches between the light and dark themes, and remembers your choice
+
 ## Installation
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser
