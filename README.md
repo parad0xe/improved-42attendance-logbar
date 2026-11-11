@@ -4,14 +4,23 @@ Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bon
 
 ## Features
 
-- Shows your bonus or missing time, in hours and in days, compared with 7 hours per working day elapsed in the month, without weekends, public holidays and campus closures
+- Shows your bonus or missing time, in hours and in days, compared with the time to have logged by today to reach the goal of the month with your plan
 - Shows the time expected by today on the progress bar
 - The gap updates by itself when your logged time changes, without reloading the page
-- A button at the bottom right switches between the light and dark themes, and remembers your choice
+- A settings block in the sidebar:
+  - a calendar to choose your days off, with weekends, public holidays and campus closures selected by default
+  - the hours you plan for each remaining day, 7 by default
+  - a switch between the light and dark themes
+- Your days off and planned hours are saved for each month, and your theme is remembered
+- The texts follow the language of the site, in French or English
 
 ## Installation
 
-1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser
+1. Install Tampermonkey for your browser:
+   - [Chrome](https://chromewebstore.google.com/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+   - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)
+   - [Edge](https://microsoftedge.microsoft.com/addons/detail/iikmkjmpaadaobahmlepeloendndfphd)
+   - [Safari](https://apps.apple.com/app/tampermonkey/id6738342400)
 2. On Chrome only, allow user scripts:
    - open `chrome://extensions`
    - click **Details** under Tampermonkey
