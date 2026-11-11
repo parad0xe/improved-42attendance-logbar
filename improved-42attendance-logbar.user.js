@@ -12,11 +12,116 @@
 // @grant        none
 // ==/UserScript==
 
+const SCRIPT_NAME = "Improved Attendance Logbar"
+const WORKDAY_MINUTES = 7 * 60
+
+/**
+ * @typedef {Object} AttendanceCalendar
+ * @property {number} year
+ * @property {number} monthIndex - 0 for January
+ * @property {Date[]} workdays - the working days of the month, without weekends and public holidays
+ */
+
+class Attendance {
+    /**
+     * @param {Record<string, any>} data - the decoded data of the /me page
+     */
+    constructor(data) {
+        const { calendar } = data
+
+        if (!Array.isArray(calendar?.workdays) || !calendar.workdays.every((day) => day instanceof Date)) {
+            throw new Error(`${SCRIPT_NAME}: the working days of the month are missing, the page may have changed`)
+        }
+
+        /** @type {AttendanceCalendar} */
+        this.calendar = {
+            year: calendar.year,
+            monthIndex: calendar.monthIndex,
+            workdays: calendar.workdays,
+        }
+    }
+
+    /**
+     * Loads the attendance data of the month shown by the page.
+     * @returns {Promise<Attendance>}
+     */
+    static async fetch() {
+        const response = await fetch(`/me/__data.json${location.search}`, { credentials: "same-origin" })
+        if (!response.ok) {
+            throw new Error(`${SCRIPT_NAME}: cannot load the attendance data (HTTP ${response.status})`)
+        }
+
+        // SvelteKit can stream more chunks on the next lines; the page data is the first one.
+        const page = JSON.parse((await response.text()).split("\n")[0])
+        if (page.type === "redirect") {
+            throw new Error(`${SCRIPT_NAME}: the session has expired, reload the page`)
+        }
+
+        /**
+         * Decodes the devalue format of SvelteKit: each value refers to the others by their index.
+         * @param {unknown[]} values
+         * @returns {any}
+         */
+        function decode(values) {
+            const specials = new Map([[-1, undefined], [-3, NaN], [-4, Infinity], [-5, -Infinity], [-6, -0]])
+            const decoded = new Map()
+
+            /**
+             * @param {number} index
+             * @returns {any}
+             */
+            function read(index) {
+                if (index < 0) return specials.get(index)
+                if (decoded.has(index)) return decoded.get(index)
+
+                const value = values[index]
+                if (value === null || typeof value !== "object") {
+                    decoded.set(index, value)
+                    return value
+                }
+
+                if (!Array.isArray(value)) {
+                    const object = {}
+                    decoded.set(index, object)
+                    for (const key in value) object[key] = read(value[key])
+                    return object
+                }
+
+                if (typeof value[0] !== "string") {
+                    const array = []
+                    decoded.set(index, array)
+                    value.forEach((item, position) => { if (item !== -2) array[position] = read(item) })
+                    return array
+                }
+
+                const [type, ...fields] = value
+                let result
+                switch (type) {
+                    case "Date": result = new Date(fields[0]); break
+                    case "BigInt": result = BigInt(fields[0]); break
+                    case "RegExp": result = new RegExp(fields[0], fields[1]); break
+                    case "Set": result = new Set(); decoded.set(index, result); fields.forEach((item) => result.add(read(item))); return result
+                    case "Map": result = new Map(); decoded.set(index, result); for (let i = 0; i < fields.length; i += 2) result.set(read(fields[i]), read(fields[i + 1])); return result
+                    case "null": result = Object.create(null); decoded.set(index, result); for (let i = 0; i < fields.length; i += 2) result[fields[i]] = read(fields[i + 1]); return result
+                    default: result = read(fields[0])
+                }
+                decoded.set(index, result)
+                return result
+            }
+
+            return read(0)
+        }
+
+        const data = Object.assign({}, ...(page.nodes ?? [])
+            .filter((node) => node?.type === "data" && Array.isArray(node.data))
+            .map((node) => decode(node.data)))
+
+        return new Attendance(data)
+    }
+}
+
 (function() {
     'use strict';
-
-    const SCRIPT_NAME = "Improved Attendance Logbar"
-    const WORKDAY_MINUTES = 7 * 60
 
     const style = document.createElement("style")
     style.textContent = `
@@ -45,20 +150,29 @@
         `
     document.head.append(style)
 
-    function showMonthGap() {
+    /**
+     * @returns {Promise<void>}
+     */
+    async function showMonthGap() {
+        const attendance = await Attendance.fetch()
+
+        /**
+         * @returns {number} the minutes expected by today, from the working days
+         */
         function getExpectedMinutes() {
             const today = new Date()
-            const year = today.getFullYear()
-            const month = today.getMonth()
+            const endOfToday = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate() + 1
+            )
 
             let elapsedWorkingDays = 0
 
-            for (let day = 1; day <= today.getDate(); day++) {
-               const dayOfWeek = new Date(year, month, day).getDay()
-
-               if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                   elapsedWorkingDays++
-               }
+            for (let date of attendance.calendar.workdays) {
+                if (date < endOfToday) {
+                    elapsedWorkingDays++
+                }
             }
 
             return elapsedWorkingDays * WORKDAY_MINUTES
