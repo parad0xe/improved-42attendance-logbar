@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Improved 42Attendance Logbar
 // @namespace    https://github.com/parad0xe
-// @version      2026.11.12
+// @version      2026.11.13
 // @description  Show the gap with the expected logged time
 // @author       parad0xe
 // @match        https://attendance.42lyon.fr/me
@@ -24,12 +24,13 @@
     const CLOSURE_END_HOUR = 20
 
     const SELECTORS = {
-        summary: "[data-slot='sidebar-inset'] main div:nth-child(2) div:nth-child(1)",
-        progressTrack: "[data-slot='sidebar-inset'] main div:nth-child(2) div:nth-child(2) div:nth-child(2)",
-        loggedMonth: "[data-slot='sidebar-inset'] main div:nth-child(2) > div div:nth-child(2) span:nth-child(1)",
-        monthGoal: "[data-slot='sidebar-inset'] main div:nth-child(2) > div div:nth-child(2) span:nth-child(3)",
-        timerParts: "[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div > span",
-        loggedToday: "[data-slot='sidebar-inset'] main div:nth-child(3) div:nth-child(2) > div > div div > span:nth-child(1)",
+        main: "[data-slot='sidebar-inset'] main",
+        summary: "[data-slot='sidebar-inset'] main div:nth-of-type(2) div:nth-of-type(1)",
+        progressTrack: "[data-slot='sidebar-inset'] main div:nth-of-type(2) div:nth-of-type(2) div:nth-of-type(2)",
+        loggedMonth: "[data-slot='sidebar-inset'] main div:nth-of-type(2) > div div:nth-of-type(2) span:nth-of-type(1)",
+        monthGoal: "[data-slot='sidebar-inset'] main div:nth-of-type(2) > div div:nth-of-type(2) span:nth-of-type(3)",
+        timerParts: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div > span",
+        loggedToday: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(1)",
     }
 
     const THEME_STYLE = `
@@ -155,6 +156,17 @@
         
         .improved-logbar-bonus { color: var(--improved-logbar-bonus); }
         .improved-logbar-missing { color: var(--improved-logbar-missing); }
+        
+        .improved-logbar-credit {
+            position: fixed;
+            right: 4rem;
+            bottom: 1rem;
+            z-index: 100;
+            line-height: 2.5rem;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+        .improved-logbar-credit:hover { text-decoration: underline; }
 
         @media (min-width: 768px) {
             .improved-logbar-summary { flex-wrap: nowrap; }
@@ -182,9 +194,7 @@
      */
 
     /**
-     * @typedef {Object} PageData
-     * @property {Element} summaryElement
-     * @property {Element} progressTrackElement
+     * @typedef {Object} PageTime
      * @property {number} loggedMonthMinutes
      * @property {number} monthGoalMinutes
      * @property {number} loggedTodayMinutes
@@ -394,132 +404,186 @@
             return new Attendance(data)
         }
     }
-    class Theme {
-        constructor(data) {
 
+    class Page {
+        constructor() {
+            /**
+             * The month summary, where the gap is shown.
+             * @type {Element}
+             */
+            this.summaryElement = document.querySelector(SELECTORS.summary)
+            if (!this.summaryElement) {
+                throw new Error(`${SCRIPT_NAME}: cannot find the month summary, the page layout may have changed`)
+            }
+
+            /**
+             * The progress bar of the month, where the expected bar is shown.
+             * @type {Element}
+             */
+            this.progressTrackElement = document.querySelector(SELECTORS.progressTrack)
+            if (!this.progressTrackElement) {
+                throw new Error(`${SCRIPT_NAME}: cannot find the progress bar, the page layout may have changed`)
+            }
+            this.progressTrackElement.classList.add("relative")
+            this.progressTrackElement.querySelector("div").classList.add("relative", "z-[1]")
+        }
+
+        /**
+         * @returns {PageTime}
+         */
+        read() {
+            let [loggedMonthText, loggedMonthTextOk] = getTimeText(SELECTORS.loggedMonth)
+            if (!loggedMonthTextOk) {
+                throw new Error(`${SCRIPT_NAME}: cannot find the logged time of the month, the page layout may have changed`)
+            }
+
+            let [monthGoalText, monthGoalTextOk] = getTimeText(SELECTORS.monthGoal)
+            if (!monthGoalTextOk) {
+                throw new Error(`${SCRIPT_NAME}: cannot find the goal of the month, the page layout may have changed`)
+            }
+
+            let timerStarted = document.querySelectorAll(SELECTORS.timerParts).length === 2
+            let [loggedTodayText, loggedTodayTextOk] = timerStarted
+                ? getTimeText(SELECTORS.loggedToday)
+                : ["00:00", true]
+            if (!loggedTodayTextOk) {
+                console.warn(`${SCRIPT_NAME}: cannot find the time logged today`)
+            }
+
+            return {
+                loggedMonthMinutes: parseMinutes(loggedMonthText),
+                monthGoalMinutes: parseMinutes(monthGoalText),
+                loggedTodayMinutes: parseMinutes(loggedTodayText.replace("+", "").trim()),
+            }
+        }
+
+        /**
+         * Redraws the expected bar and the gap.
+         * @param {number} expectedMinutes
+         * @param {PageTime} time
+         * @returns {void}
+         */
+        update(expectedMinutes, time) {
+            this.renderExpectedBar(expectedMinutes, time)
+            this.renderGap(expectedMinutes, time)
+        }
+
+        /**
+         * @param {PageTime} a
+         * @param {PageTime} b
+         * @returns {boolean}
+         */
+        static equal(a, b) {
+            return a.loggedMonthMinutes === b.loggedMonthMinutes
+                && a.monthGoalMinutes === b.monthGoalMinutes
+                && a.loggedTodayMinutes === b.loggedTodayMinutes
+        }
+
+        /**
+         * Replaces the expected bar, shown only while the logged time is behind it.
+         * @param {number} expectedMinutes
+         * @param {PageTime} time
+         * @returns {void}
+         */
+        renderExpectedBar(expectedMinutes, time) {
+            let expectedProgressBarElement = this.progressTrackElement.querySelector(".improved-logbar-expected-bar")
+            let barExists = expectedProgressBarElement !== null
+
+            const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
+            if (time.loggedMonthMinutes >= time.monthGoalMinutes || expectedMinutes <= loggedTotalMinutes) {
+                expectedProgressBarElement?.remove()
+                return
+            }
+
+            if (!barExists) {
+                expectedProgressBarElement = document.createElement("div")
+                expectedProgressBarElement.classList.add("improved-logbar-expected-bar")
+                expectedProgressBarElement.style.width = `0%`
+                this.progressTrackElement.appendChild(expectedProgressBarElement)
+            }
+
+            let expectedProgressBarLabelElement = this.progressTrackElement.querySelector(".improved-logbar-expected-bar-label")
+            let barLabelExists = expectedProgressBarLabelElement !== null
+            if (!barLabelExists) {
+                expectedProgressBarLabelElement = document.createElement("span")
+                expectedProgressBarLabelElement.classList.add("improved-logbar-expected-bar-label")
+                expectedProgressBarElement.append(expectedProgressBarLabelElement)
+            }
+            expectedProgressBarLabelElement.textContent = `${formatMinutes(expectedMinutes)}`
+
+            setTimeout(() => {
+                expectedProgressBarElement.style.width = `${expectedMinutes / time.monthGoalMinutes * 100}%`
+            }, 30)
+        }
+
+        /**
+         * Replaces the gap, shown only while the goal of the month is not reached.
+         * @param {number} expectedMinutes
+         * @param {PageTime} time
+         * @returns {void}
+         */
+        renderGap(expectedMinutes, time) {
+            this.summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
+
+            if (time.loggedMonthMinutes >= time.monthGoalMinutes) { return }
+
+            this.summaryElement.classList.add("improved-logbar-summary")
+
+            const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
+            const gapMinutes = Math.abs(expectedMinutes - loggedTotalMinutes)
+            const gapDays = gapMinutes / WORKDAY_MINUTES
+            const gapDirection = (expectedMinutes <= loggedTotalMinutes) ? {
+                daysLabel: "bonus",
+                sign: "+",
+                className: "improved-logbar-bonus"
+            } : {
+                daysLabel: "missing",
+                sign: "-",
+                className: "improved-logbar-missing"
+            }
+
+            const gapContainer = document.createElement("span")
+            gapContainer.className = "improved-logbar-gap-container"
+            this.summaryElement.prepend(gapContainer)
+
+            const gapTimeLabelElement = document.createElement("strong")
+            gapTimeLabelElement.classList.add(gapDirection.className)
+            gapTimeLabelElement.title = `expected ${formatMinutes(expectedMinutes)}`
+            gapTimeLabelElement.textContent = `${gapDirection.sign}${formatMinutes(gapMinutes)}`
+            gapContainer.prepend(gapTimeLabelElement)
+
+            const gapDaysLabelElement = document.createElement("span")
+            gapDaysLabelElement.className = "improved-logbar-gap-days"
+            gapDaysLabelElement.classList.add(gapDirection.className)
+            gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
+            gapContainer.append(gapDaysLabelElement)
+        }
+
+        /**
+         * Calls callback with the new time when one of the times changes, until an error occurs.
+         * @param {(time: PageTime) => void} callback
+         * @returns {void}
+         */
+        watch(callback) {
+            let time = this.read()
+
+            const observer = new MutationObserver(() => {
+                try {
+                    const newTime = this.read()
+                    if (Page.equal(newTime, time)) { return }
+
+                    time = newTime
+                    callback(time)
+                } catch (error) {
+                    observer.disconnect()
+                    console.error(error)
+                    renderError(error)
+                }
+            })
+            observer.observe(document.querySelector(SELECTORS.main), { childList: true, subtree: true, characterData: true })
         }
     }
 
-
-    /**
-     * @returns {PageData}
-     */
-    function readPage() {
-        let summaryElement = document.querySelector(SELECTORS.summary)
-        if (!summaryElement) {
-            throw new Error(`${SCRIPT_NAME}: cannot find the month summary, the page layout may have changed`)
-        }
-
-        let progressTrackElement = document.querySelector(SELECTORS.progressTrack)
-        if (!progressTrackElement) {
-            throw new Error(`${SCRIPT_NAME}: cannot find the progress bar, the page layout may have changed`)
-        }
-        progressTrackElement.classList.add("relative")
-        progressTrackElement.querySelector("div").classList.add("relative", "z-[1]")
-
-        let [loggedMonthText, loggedMonthTextOk] = getTimeText(SELECTORS.loggedMonth)
-        if (!loggedMonthTextOk) {
-            throw new Error(`${SCRIPT_NAME}: cannot find the logged time of the month, the page layout may have changed`)
-        }
-
-        let [monthGoalText, monthGoalTextOk] = getTimeText(SELECTORS.monthGoal)
-        if (!monthGoalTextOk) {
-            throw new Error(`${SCRIPT_NAME}: cannot find the goal of the month, the page layout may have changed`)
-        }
-
-        let timerStarted = document.querySelectorAll(SELECTORS.timerParts).length === 2
-        let [loggedTodayText, loggedTodayTextOk] = timerStarted
-            ? getTimeText(SELECTORS.loggedToday)
-            : [null, false]
-        if (!loggedTodayTextOk) {
-            loggedTodayText = "00:00"
-        }
-
-        return {
-            summaryElement,
-            progressTrackElement,
-            loggedMonthMinutes: parseMinutes(loggedMonthText),
-            monthGoalMinutes: parseMinutes(monthGoalText),
-            loggedTodayMinutes: parseMinutes(loggedTodayText.replace("+", "").trim()),
-        }
-    }
-
-    /**
-     * @param {Element} progressTrackElement
-     * @param {number} expectedMinutes
-     * @param {number} monthGoalMinutes
-     * @returns {void}
-     */
-    function renderExpectedBar(progressTrackElement, expectedMinutes, monthGoalMinutes) {
-        let expectedProgressBarElement = document.createElement("div")
-        expectedProgressBarElement.classList.add("improved-logbar-expected-bar")
-        expectedProgressBarElement.style.width = `0%`
-        progressTrackElement.appendChild(expectedProgressBarElement)
-
-        const expectedLabelElement = document.createElement("span")
-        expectedLabelElement.classList.add("improved-logbar-expected-bar-label")
-        expectedLabelElement.textContent = `${formatMinutes(expectedMinutes)}`
-        expectedProgressBarElement.append(expectedLabelElement)
-
-        setTimeout(() => {
-            expectedProgressBarElement.style.width = `${expectedMinutes / monthGoalMinutes * 100}%`
-        }, 30)
-    }
-
-    /**
-     * @param {Element} summaryElement
-     * @param {number} expectedMinutes
-     * @param {number} loggedTotalMinutes
-     * @returns {void}
-     */
-    function renderGap(summaryElement, expectedMinutes, loggedTotalMinutes) {
-        summaryElement.classList.add("improved-logbar-summary")
-
-        const gapMinutes = Math.abs(expectedMinutes - loggedTotalMinutes)
-        const gapDays = gapMinutes / WORKDAY_MINUTES
-        const gapDirection = (expectedMinutes <= loggedTotalMinutes) ? {
-            daysLabel: "bonus",
-            sign: "+",
-            className: "improved-logbar-bonus"
-        } : {
-            daysLabel: "missing",
-            sign: "-",
-            className: "improved-logbar-missing"
-        }
-
-        const gapContainer = document.createElement("div")
-        gapContainer.className = "improved-logbar-gap-container"
-        summaryElement.prepend(gapContainer)
-
-        const gapTimeLabelElement = document.createElement("strong")
-        gapTimeLabelElement.style.color = gapDirection.color
-        gapTimeLabelElement.classList.add(gapDirection.className)
-        gapTimeLabelElement.title = `expected ${formatMinutes(expectedMinutes)}`
-        gapTimeLabelElement.textContent = `${gapDirection.sign}${formatMinutes(gapMinutes)}`
-        gapContainer.prepend(gapTimeLabelElement)
-
-        const gapDaysLabelElement = document.createElement("span")
-        gapDaysLabelElement.className = "improved-logbar-gap-days"
-        gapDaysLabelElement.style.color = gapDirection.color
-        gapDaysLabelElement.classList.add(gapDirection.className)
-        gapDaysLabelElement.textContent = `(${gapDays.toFixed(1)} ${gapDirection.daysLabel} ${gapDays < 2 ? "day" : "days"})`
-        gapContainer.append(gapDaysLabelElement)
-    }
-
-    /**
-     * @param {Error} error
-     * @returns {void}
-     */
-    function renderError(error) {
-        const summaryElement = document.querySelector(SELECTORS.summary)
-        if (summaryElement) {
-            const errorElement = document.createElement("span")
-            errorElement.className = "improved-logbar-gap-container"
-            errorElement.title = error.message
-            errorElement.textContent = "gap unavailable"
-            summaryElement.prepend(errorElement)
-        }
-    }
 
     /**
      * @returns {void}
@@ -549,6 +613,14 @@
         })
         document.body.append(switchElement)
 
+        const creditElement = document.createElement("a")
+        creditElement.className = "improved-logbar-credit"
+        creditElement.href = "https://github.com/parad0xe"
+        creditElement.target = "_blank"
+        creditElement.rel = "noopener noreferrer"
+        creditElement.textContent = "@nlallema"
+        document.body.append(creditElement)
+
         applyTheme()
         new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
     }
@@ -557,31 +629,47 @@
 
     // MAIN
     /**
+     * @param {Error} error
+     * @returns {void}
+     */
+    function renderError(error) {
+        const summaryElement = document.querySelector(SELECTORS.summary)
+        if (summaryElement) {
+            summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
+
+            const errorElement = document.createElement("span")
+            errorElement.className = "improved-logbar-gap-container"
+            errorElement.title = error.message
+            errorElement.textContent = "gap unavailable"
+            summaryElement.prepend(errorElement)
+        }
+    }
+
+    /**
      * @returns {Promise<void>}
      */
     async function showMonthGap() {
         const attendance = await Attendance.fetch()
-        const page = readPage()
-        const loggedTotalMinutes = page.loggedMonthMinutes + page.loggedTodayMinutes
+        const page = new Page()
 
-        if (page.loggedMonthMinutes >= page.monthGoalMinutes) { return }
-
-        const expectedMinutes = attendance.getExpectedMinutes()
-        if (expectedMinutes > loggedTotalMinutes) {
-            renderExpectedBar(page.progressTrackElement, expectedMinutes, page.monthGoalMinutes)
-        }
-        renderGap(page.summaryElement, expectedMinutes, loggedTotalMinutes)
+        page.update(attendance.getExpectedMinutes(), page.read())
+        page.watch((time) => page.update(attendance.getExpectedMinutes(), time))
     }
 
-    const style = document.createElement("style")
-    style.textContent = LAYOUT_STYLE + THEME_STYLE
-    document.head.append(style)
+    /** @returns {void} */
+    function main() {
+        const style = document.createElement("style")
+        style.textContent = LAYOUT_STYLE + THEME_STYLE
+        document.head.append(style)
 
-    mountThemeSwitcher()
-    setTimeout(() => {
-        showMonthGap().catch((error) => {
-            console.error(error)
-            renderError(error)
-        })
-    }, 100)
+        mountThemeSwitcher()
+        setTimeout(() => {
+            showMonthGap().catch((error) => {
+                console.error(error)
+                renderError(error)
+            })
+        }, 100)
+    }
+
+    main()
 })();
