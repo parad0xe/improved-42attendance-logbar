@@ -156,6 +156,17 @@
         
         .improved-logbar-bonus { color: var(--improved-logbar-bonus); }
         .improved-logbar-missing { color: var(--improved-logbar-missing); }
+        
+        .improved-logbar-credit {
+            position: fixed;
+            right: 4rem;
+            bottom: 1rem;
+            z-index: 100;
+            line-height: 2.5rem;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+        .improved-logbar-credit:hover { text-decoration: underline; }
 
         @media (min-width: 768px) {
             .improved-logbar-summary { flex-wrap: nowrap; }
@@ -602,6 +613,14 @@
         })
         document.body.append(switchElement)
 
+        const creditElement = document.createElement("a")
+        creditElement.className = "improved-logbar-credit"
+        creditElement.href = "https://github.com/parad0xe"
+        creditElement.target = "_blank"
+        creditElement.rel = "noopener noreferrer"
+        creditElement.textContent = "@nlallema"
+        document.body.append(creditElement)
+
         applyTheme()
         new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
     }
@@ -617,7 +636,7 @@
         const summaryElement = document.querySelector(SELECTORS.summary)
         if (summaryElement) {
             summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
-            
+
             const errorElement = document.createElement("span")
             errorElement.className = "improved-logbar-gap-container"
             errorElement.title = error.message
