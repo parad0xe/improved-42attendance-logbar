@@ -1339,12 +1339,12 @@
         const settings = await Settings.load()
         settings.mount()
 
-        setTimeout(() => {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
             showMonthGap(settings).catch((error) => {
                 console.error(error)
                 renderError(error, settings.labels)
             })
-        }, 100)
+        }))
     }
 
     main()
