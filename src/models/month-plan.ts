@@ -21,6 +21,20 @@ interface MonthPlanData {
     lastSync?: CapsuleSync | null
 }
 
+interface MonthPlanOptions {
+    year: number
+    /** 0 for January */
+    monthIndex: number
+    /** the days of the month, from 1, with no planned time */
+    daysOff: Set<number>
+    /** the time planned on each remaining day */
+    dailyMinutes: number
+    /** the capsules planned to be used this month */
+    capsules: number
+    /** what the site showed at the last capsule sync */
+    lastSync: CapsuleSync | null
+}
+
 export class MonthPlan {
     year: number
     monthIndex: number
@@ -29,15 +43,7 @@ export class MonthPlan {
     capsules: number
     lastSync: CapsuleSync | null
 
-    /**
-     * @param year
-     * @param monthIndex - 0 for January
-     * @param daysOff - the days of the month, from 1, with no planned time
-     * @param dailyMinutes - the time planned on each remaining day
-     * @param capsules - the capsules planned to be used this month
-     * @param lastSync - what the site showed at the last capsule sync
-     */
-    constructor(year: number, monthIndex: number, daysOff: Set<number>, dailyMinutes: number, capsules: number, lastSync: CapsuleSync | null) {
+    constructor({ year, monthIndex, daysOff, dailyMinutes, capsules, lastSync }: MonthPlanOptions) {
         this.year = year
         this.monthIndex = monthIndex
         this.daysOff = daysOff
@@ -67,7 +73,7 @@ export class MonthPlan {
                     || (Number.isInteger(lastSync.availableCapsules) && Number.isFinite(lastSync.monthGoalMinutes))
                 if (Array.isArray(daysOff) && daysOff.every(Number.isInteger) && Number.isFinite(dailyMinutes) && dailyMinutes >= 0
                     && Number.isInteger(capsules) && capsules >= 0 && isValidSync) {
-                    return new MonthPlan(year, monthIndex, new Set(daysOff), dailyMinutes, capsules, lastSync)
+                    return new MonthPlan({ year, monthIndex, daysOff: new Set(daysOff), dailyMinutes, capsules, lastSync })
                 }
             }
         } catch {
@@ -81,7 +87,7 @@ export class MonthPlan {
             }
         }
 
-        return new MonthPlan(year, monthIndex, daysOff, WORKDAY_MINUTES, 0, null)
+        return new MonthPlan({ year, monthIndex, daysOff, dailyMinutes: WORKDAY_MINUTES, capsules: 0, lastSync: null })
     }
 
     save(): void {
