@@ -5,7 +5,7 @@ const THEME_STORAGE_KEY = "improved-logbar-theme"
 const PLAN_STORAGE_KEY = "improved-logbar-plan"
 const LANG_COOKIE_KEY = "PARAGLIDE_LOCALE"
 
-const LABELS = {
+const LABELS: Record<string, Labels> = {
     fr: {
         WEEKDAYS: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
         THEME: "Thème",
@@ -251,117 +251,112 @@ const LAYOUT_STYLE = `
     `
 
 // TYPES
-/**
- * @typedef {Object} AttendanceCalendar
- * @property {number} year
- * @property {number} monthIndex - 0 for January
- * @property {Date[]} workdays - the working days of the month, without weekends and public holidays
- */
+interface AttendanceCalendar {
+    year: number
+    /** 0 for January */
+    monthIndex: number
+    /** the working days of the month, without weekends and public holidays */
+    workdays: Date[]
+}
 
-/**
- * @typedef {Object} AttendanceClosure
- * @property {Date} beginAt
- * @property {Date} endAt
- */
+interface AttendanceClosure {
+    beginAt: Date
+    endAt: Date
+}
 
-/**
- * @typedef {Object} AttendanceHistory
- * @property {AttendanceClosure[]} closures - the times when the campus is closed
- */
+interface AttendanceHistory {
+    /** the times when the campus is closed */
+    closures: AttendanceClosure[]
+}
 
-/**
- * @typedef {Object} PageTime
- * @property {number} loggedMonthMinutes
- * @property {number} monthGoalMinutes
- * @property {number} loggedTodayMinutes
- */
+interface PageTime {
+    loggedMonthMinutes: number
+    monthGoalMinutes: number
+    loggedTodayMinutes: number
+}
 
-/**
- * @typedef {"public-holiday" | "closure"} DayMark
- */
+type DayMark = "public-holiday" | "closure"
 
-/**
- * @typedef {Object} CapsuleSync
- * @property {number} availableCapsules
- * @property {number} monthGoalMinutes - the goal shown by the site
- */
+interface CapsuleSync {
+    availableCapsules: number
+    /** the goal shown by the site */
+    monthGoalMinutes: number
+}
 
-/**
- * @typedef {Object} MonthPlanData
- * @property {number[]} daysOff - the days of the month, from 1, with no planned time
- * @property {number} dailyMinutes - the time planned on each remaining day
- * @property {number} [capsules] - the capsules planned to be used this month
- * @property {CapsuleSync | null} [lastSync] - what the site showed at the last capsule sync
- */
+interface MonthPlanData {
+    /** the days of the month, from 1, with no planned time */
+    daysOff: number[]
+    /** the time planned on each remaining day */
+    dailyMinutes: number
+    /** the capsules planned to be used this month */
+    capsules?: number
+    /** what the site showed at the last capsule sync */
+    lastSync?: CapsuleSync | null
+}
 
-/**
- * @typedef {Object} Labels
- * @property {string[]} WEEKDAYS - from Monday
- * @property {string} THEME
- * @property {string} DAYS_OFF
- * @property {string} HOURS_PER_REMAINING_DAY
- * @property {(time: string) => string} EXPECTED
- * @property {(days: number) => string} BONUS_DAYS
- * @property {(days: number) => string} MISSING_DAYS
- * @property {(time: string) => string} REMAINING_TODAY
- * @property {string} CAPSULES_TO_USE
- * @property {(count: number) => string} CAPSULES_LEFT
- * @property {string} PUBLIC_HOLIDAY
- * @property {string} CLOSURE
- * @property {string} GAP_UNAVAILABLE
- * @property {string} ERROR_WORKDAYS_MISSING
- * @property {(status: number) => string} ERROR_DATA_UNAVAILABLE
- * @property {string} ERROR_SESSION_EXPIRED
- * @property {string} ERROR_SUMMARY_NOT_FOUND
- * @property {string} ERROR_PROGRESS_BAR_NOT_FOUND
- * @property {string} ERROR_LOGGED_MONTH_NOT_FOUND
- * @property {string} ERROR_MONTH_GOAL_NOT_FOUND
- * @property {string} WARNING_LOGGED_TODAY_NOT_FOUND
- */
+interface Labels {
+    /** from Monday */
+    WEEKDAYS: string[]
+    THEME: string
+    DAYS_OFF: string
+    HOURS_PER_REMAINING_DAY: string
+    EXPECTED: (time: string) => string
+    BONUS_DAYS: (days: number) => string
+    MISSING_DAYS: (days: number) => string
+    REMAINING_TODAY: (time: string) => string
+    CAPSULES_TO_USE: string
+    CAPSULES_LEFT: (count: number) => string
+    PUBLIC_HOLIDAY: string
+    CLOSURE: string
+    GAP_UNAVAILABLE: string
+    ERROR_WORKDAYS_MISSING: string
+    ERROR_DATA_UNAVAILABLE: (status: number) => string
+    ERROR_SESSION_EXPIRED: string
+    ERROR_SUMMARY_NOT_FOUND: string
+    ERROR_PROGRESS_BAR_NOT_FOUND: string
+    ERROR_LOGGED_MONTH_NOT_FOUND: string
+    ERROR_MONTH_GOAL_NOT_FOUND: string
+    WARNING_LOGGED_TODAY_NOT_FOUND: string
+}
 
 
 // HELPERS
 /**
- * @param {string} lang
- * @returns {Labels} the labels in lang, or in English when lang has none
+ * @returns the labels in lang, or in English when lang has none
  */
-function getLabels(lang) {
+function getLabels(lang: string): Labels {
     return LABELS[lang] ?? LABELS.en
 }
 
 /**
- * @param {string} text - a duration such as "26:33"
- * @returns {number}
+ * @param text - a duration such as "26:33"
  */
-function parseMinutes(text) {
+function parseMinutes(text: string): number {
     let [hours, minutes] = text.split(":").map((x) => parseInt(x))
     return hours * 60 + minutes
 }
 
 /**
- * @param {number} minutes
- * @returns {string} the duration as HH:MM, with a minus sign when negative
+ * @returns the duration as HH:MM, with a minus sign when negative
  */
-function formatMinutes(minutes) {
+function formatMinutes(minutes: number): string {
     const sign = minutes < 0 ? "-" : ""
     const absoluteMinutes = Math.abs(minutes)
     return `${sign}${String(Math.floor(absoluteMinutes / 60)).padStart(2, '0')}:${String(absoluteMinutes % 60).padStart(2, '0')}`
 }
 
 /**
- * @param {number} year
- * @param {number} monthIndex - 0 for January
- * @returns {number}
+ * @param year
+ * @param monthIndex - 0 for January
  */
-function getDaysInMonth(year, monthIndex) {
+function getDaysInMonth(year: number, monthIndex: number): number {
     return new Date(year, monthIndex + 1, 0).getDate()
 }
 
 /**
- * @param {string} selector
- * @returns {[string, boolean]} the text of the element, and whether the element exists
+ * @returns the text of the element, and whether the element exists
  */
-function getTimeText(selector) {
+function getTimeText(selector: string): [string, boolean] {
     const element = document.querySelector(selector)
     if (!element) {
         return ["00:00", false]
@@ -371,18 +366,12 @@ function getTimeText(selector) {
 
 /**
  * Decodes the devalue format of SvelteKit: each value refers to the others by their index.
- * @param {unknown[]} values
- * @returns {any}
  */
-function decodeDevalue(values) {
+function decodeDevalue(values: unknown[]): any {
     const specials = new Map([[-1, undefined], [-3, NaN], [-4, Infinity], [-5, -Infinity], [-6, -0]])
-    const decoded = new Map()
+    const decoded = new Map<number, any>()
 
-    /**
-     * @param {number} index
-     * @returns {any}
-     */
-    function read(index) {
+    function read(index: number): any {
         if (index < 0) return specials.get(index)
         if (decoded.has(index)) return decoded.get(index)
 
@@ -393,21 +382,21 @@ function decodeDevalue(values) {
         }
 
         if (!Array.isArray(value)) {
-            const object = {}
+            const object: Record<string, any> = {}
             decoded.set(index, object)
-            for (const key in value) object[key] = read(value[key])
+            for (const key in value) object[key] = read((value as Record<string, number>)[key])
             return object
         }
 
         if (typeof value[0] !== "string") {
-            const array = []
+            const array: any[] = []
             decoded.set(index, array)
             value.forEach((item, position) => { if (item !== -2) array[position] = read(item) })
             return array
         }
 
         const [type, ...fields] = value
-        let result
+        let result: any
         switch (type) {
             case "Date": result = new Date(fields[0]); break
             case "BigInt": result = BigInt(fields[0]); break
@@ -425,9 +414,9 @@ function decodeDevalue(values) {
 }
 
 /**
- * @returns {boolean} whether the dark theme was chosen, or else whether the system uses one
+ * @returns whether the dark theme was chosen, or else whether the system uses one
  */
-function isDarkThemeChosen() {
+function isDarkThemeChosen(): boolean {
     try {
         const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
         if (savedTheme !== null) {
@@ -439,11 +428,7 @@ function isDarkThemeChosen() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches
 }
 
-/**
- * @param {boolean} isDark
- * @returns {void}
- */
-function saveThemeChoice(isDark) {
+function saveThemeChoice(isDark: boolean): void {
     try {
         localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light")
     } catch {
@@ -454,42 +439,41 @@ function saveThemeChoice(isDark) {
 
 // OBJECTS
 class Attendance {
+    calendar: AttendanceCalendar
+    history: AttendanceHistory
     /**
-     * @param {Record<string, any>} data - the decoded data of the /me page
-     * @param {Labels} labels - for the error messages
+     * The capsules left to use, shared by every month.
      */
-    constructor(data, labels) {
+    availableCapsules: number
+
+    /**
+     * @param data - the decoded data of the /me page
+     * @param labels - for the error messages
+     */
+    constructor(data: Record<string, any>, labels: Labels) {
         const { calendar, history } = data
 
-        if (!Array.isArray(calendar?.workdays) || !calendar.workdays.every((day) => day instanceof Date)) {
+        if (!Array.isArray(calendar?.workdays) || !calendar.workdays.every((day: unknown) => day instanceof Date)) {
             throw new Error(`${SCRIPT_NAME}: ${labels.ERROR_WORKDAYS_MISSING}`)
         }
 
-        /** @type {AttendanceCalendar} */
         this.calendar = {
             year: calendar.year,
             monthIndex: calendar.monthIndex,
             workdays: calendar.workdays,
         }
 
-        /** @type {AttendanceHistory} */
         this.history = {
             closures: history?.closures ?? [],
         }
 
-        /**
-         * The capsules left to use, shared by every month.
-         * @type {number}
-         */
         this.availableCapsules = Array.isArray(data.availableCapsules) ? data.availableCapsules.length : 0
     }
 
     /**
      * Reports whether closures cover a full workday between 08:00 and 20:00, as on the site.
-     * @param {Date} workday
-     * @returns {boolean}
      */
-    isClosedDay(workday) {
+    isClosedDay(workday: Date): boolean {
         const workdayStart = new Date(workday.getFullYear(), workday.getMonth(), workday.getDate(), CLOSURE_START_HOUR)
         const workdayEnd = new Date(workday.getFullYear(), workday.getMonth(), workday.getDate(), CLOSURE_END_HOUR)
 
@@ -498,7 +482,7 @@ class Attendance {
             const start = closure.beginAt > workdayStart ? closure.beginAt : workdayStart
             const end = closure.endAt < workdayEnd ? closure.endAt : workdayEnd
             if (end > start) {
-                closedMinutes += (end - start) / (60 * 1000)
+                closedMinutes += (end.getTime() - start.getTime()) / (60 * 1000)
             }
         }
 
@@ -506,29 +490,26 @@ class Attendance {
     }
 
     /**
-     * @param {Date} date
-     * @returns {boolean} whether date is in the workdays of the month
+     * @returns whether date is in the workdays of the month
      */
-    isWorkday(date) {
+    isWorkday(date: Date): boolean {
         return this.calendar.workdays.some((workday) => workday.toDateString() === date.toDateString())
     }
 
     /**
      * Reports whether time is expected on date: a workday when the campus is not closed.
-     * @param {Date} date
-     * @returns {boolean}
      */
-    isOpenWorkday(date) {
+    isOpenWorkday(date: Date): boolean {
         return this.isWorkday(date) && !this.isClosedDay(date)
     }
 
     /**
-     * @returns {Map<number, DayMark>} the public holidays and the closed workdays of the month, by day from 1
+     * @returns the public holidays and the closed workdays of the month, by day from 1
      */
-    getDayMarks() {
+    getDayMarks(): Map<number, DayMark> {
         const { year, monthIndex } = this.calendar
 
-        const dayMarks = new Map()
+        const dayMarks = new Map<number, DayMark>()
         for (let day = 1; day <= getDaysInMonth(year, monthIndex); day++) {
             const date = new Date(year, monthIndex, day)
             const isWeekend = date.getDay() === 0 || date.getDay() === 6
@@ -544,10 +525,9 @@ class Attendance {
 
     /**
      * Loads the attendance data of the month shown by the page.
-     * @param {Labels} labels - for the error messages
-     * @returns {Promise<Attendance>}
+     * @param labels - for the error messages
      */
-    static async fetch(labels) {
+    static async fetch(labels: Labels): Promise<Attendance> {
         const response = await fetch(`/me/__data.json${location.search}`, { credentials: "same-origin" })
         if (!response.ok) {
             throw new Error(`${SCRIPT_NAME}: ${labels.ERROR_DATA_UNAVAILABLE(response.status)}`)
@@ -560,59 +540,55 @@ class Attendance {
         }
 
         const data = Object.assign({}, ...(page.nodes ?? [])
-            .filter((node) => node?.type === "data" && Array.isArray(node.data))
-            .map((node) => decodeDevalue(node.data)))
+            .filter((node: any) => node?.type === "data" && Array.isArray(node.data))
+            .map((node: any) => decodeDevalue(node.data)))
 
         return new Attendance(data, labels)
     }
 }
 
 class MonthPlan {
+    year: number
+    monthIndex: number
+    daysOff: Set<number>
+    dailyMinutes: number
+    capsules: number
+    lastSync: CapsuleSync | null
+
     /**
-     * @param {number} year
-     * @param {number} monthIndex - 0 for January
-     * @param {Set<number>} daysOff - the days of the month, from 1, with no planned time
-     * @param {number} dailyMinutes - the time planned on each remaining day
-     * @param {number} capsules - the capsules planned to be used this month
-     * @param {CapsuleSync | null} lastSync - what the site showed at the last capsule sync
+     * @param year
+     * @param monthIndex - 0 for January
+     * @param daysOff - the days of the month, from 1, with no planned time
+     * @param dailyMinutes - the time planned on each remaining day
+     * @param capsules - the capsules planned to be used this month
+     * @param lastSync - what the site showed at the last capsule sync
      */
-    constructor(year, monthIndex, daysOff, dailyMinutes, capsules, lastSync) {
-        /** @type {number} */
+    constructor(year: number, monthIndex: number, daysOff: Set<number>, dailyMinutes: number, capsules: number, lastSync: CapsuleSync | null) {
         this.year = year
-        /** @type {number} */
         this.monthIndex = monthIndex
-        /** @type {Set<number>} */
         this.daysOff = daysOff
-        /** @type {number} */
         this.dailyMinutes = dailyMinutes
-        /** @type {number} */
         this.capsules = capsules
-        /** @type {CapsuleSync | null} */
         this.lastSync = lastSync
     }
 
     /**
-     * @param {number} year
-     * @param {number} monthIndex
-     * @returns {string} the storage key of the plan of this month
+     * @returns the storage key of the plan of this month
      */
-    static storageKey(year, monthIndex) {
+    static storageKey(year: number, monthIndex: number): string {
         return `${PLAN_STORAGE_KEY}-${year}-${String(monthIndex + 1).padStart(2, '0')}`
     }
 
     /**
      * Loads the saved plan of the month of attendance, or else a plan with its days that are not open workdays as days off.
-     * @param {Attendance} attendance
-     * @returns {MonthPlan}
      */
-    static load(attendance) {
+    static load(attendance: Attendance): MonthPlan {
         const { year, monthIndex } = attendance.calendar
 
         try {
             const savedPlan = localStorage.getItem(MonthPlan.storageKey(year, monthIndex))
             if (savedPlan !== null) {
-                /** @type {MonthPlanData} */
-                const { daysOff, dailyMinutes, capsules = 0, lastSync = null } = JSON.parse(savedPlan)
+                const { daysOff, dailyMinutes, capsules = 0, lastSync = null }: MonthPlanData = JSON.parse(savedPlan)
                 const isValidSync = lastSync === null
                     || (Number.isInteger(lastSync.availableCapsules) && Number.isFinite(lastSync.monthGoalMinutes))
                 if (Array.isArray(daysOff) && daysOff.every(Number.isInteger) && Number.isFinite(dailyMinutes) && dailyMinutes >= 0
@@ -624,7 +600,7 @@ class MonthPlan {
             // The storage can be unavailable, or the saved plan unreadable.
         }
 
-        const daysOff = new Set()
+        const daysOff = new Set<number>()
         for (let day = 1; day <= getDaysInMonth(year, monthIndex); day++) {
             if (!attendance.isOpenWorkday(new Date(year, monthIndex, day))) {
                 daysOff.add(day)
@@ -634,12 +610,8 @@ class MonthPlan {
         return new MonthPlan(year, monthIndex, daysOff, WORKDAY_MINUTES, 0, null)
     }
 
-    /**
-     * @returns {void}
-     */
-    save() {
-        /** @type {MonthPlanData} */
-        const storedPlan = {
+    save(): void {
+        const storedPlan: MonthPlanData = {
             daysOff: [...this.daysOff],
             dailyMinutes: this.dailyMinutes,
             capsules: this.capsules,
@@ -654,10 +626,9 @@ class MonthPlan {
     }
 
     /**
-     * @param {number} day - the day of the month, from 1
-     * @returns {void}
+     * @param day - the day of the month, from 1
      */
-    toggleDayOff(day) {
+    toggleDayOff(day: number): void {
         if (this.daysOff.has(day)) {
             this.daysOff.delete(day)
         } else {
@@ -666,10 +637,9 @@ class MonthPlan {
     }
 
     /**
-     * @param {Date} [now]
-     * @returns {number} the days after now that are not days off
+     * @returns the days after now that are not days off
      */
-    countRemainingDays(now = new Date()) {
+    countRemainingDays(now = new Date()): number {
         let remainingDays = 0
         for (let day = 1; day <= getDaysInMonth(this.year, this.monthIndex); day++) {
             const date = new Date(this.year, this.monthIndex, day)
@@ -682,37 +652,30 @@ class MonthPlan {
     }
 
     /**
-     * @param {number} monthGoalMinutes
-     * @returns {number} the minutes to have logged by today to reach the goal with the planned time
+     * @returns the minutes to have logged by today to reach the goal with the planned time
      */
-    getExpectedMinutes(monthGoalMinutes) {
+    getExpectedMinutes(monthGoalMinutes: number): number {
         return this.getExpectedRange(monthGoalMinutes).end
     }
 
-    /**
-     * @param {Date} [now]
-     * @returns {boolean}
-     */
-    isCurrentMonth(now = new Date()) {
+    isCurrentMonth(now = new Date()): boolean {
         return this.year === now.getFullYear() && this.monthIndex === now.getMonth()
     }
 
     /**
      * Reports whether time is planned on the day of now, in the month of the plan.
-     * @param {Date} [now]
-     * @returns {boolean}
      */
-    isPlannedDay(now = new Date()) {
+    isPlannedDay(now = new Date()): boolean {
         return this.isCurrentMonth(now) && !this.daysOff.has(now.getDate())
     }
 
     /**
      * The capsules count only in the current month, as the available capsules are shared by every month.
-     * @param {number} monthGoalMinutes - the goal shown by the site
-     * @param {Date} [now]
-     * @returns {number} the goal lowered by a workday for each planned capsule
+     * @param monthGoalMinutes - the goal shown by the site
+     * @param now
+     * @returns the goal lowered by a workday for each planned capsule
      */
-    getGoalMinutes(monthGoalMinutes, now = new Date()) {
+    getGoalMinutes(monthGoalMinutes: number, now = new Date()): number {
         if (!this.isCurrentMonth(now)) { return monthGoalMinutes }
         return monthGoalMinutes - this.capsules * WORKDAY_MINUTES
     }
@@ -720,11 +683,10 @@ class MonthPlan {
     /**
      * Removes the capsules used since the last sync from the planned ones, and keeps at most availableCapsules.
      * A capsule counts as used when the available capsules and the goal of the month both went down.
-     * @param {number} availableCapsules
-     * @param {number} monthGoalMinutes - the goal shown by the site
-     * @returns {void}
+     * @param availableCapsules
+     * @param monthGoalMinutes - the goal shown by the site
      */
-    syncCapsules(availableCapsules, monthGoalMinutes) {
+    syncCapsules(availableCapsules: number, monthGoalMinutes: number): void {
         if (this.lastSync) {
             const usedCapsules = Math.min(
                 this.lastSync.availableCapsules - availableCapsules,
@@ -737,11 +699,11 @@ class MonthPlan {
     }
 
     /**
-     * @param {number} monthGoalMinutes - the goal shown by the site
-     * @param {Date} [now]
-     * @returns {{ start: number, end: number }} the minutes to have logged at the start and at the end of the day of now
+     * @param monthGoalMinutes - the goal shown by the site
+     * @param now
+     * @returns the minutes to have logged at the start and at the end of the day of now
      */
-    getExpectedRange(monthGoalMinutes, now = new Date()) {
+    getExpectedRange(monthGoalMinutes: number, now = new Date()): { start: number, end: number } {
         const end = this.getGoalMinutes(monthGoalMinutes, now) - this.countRemainingDays(now) * this.dailyMinutes
         const start = this.isPlannedDay(now) ? end - this.dailyMinutes : end
         return { start, end }
@@ -750,40 +712,37 @@ class MonthPlan {
 
 class Page {
     /**
-     * @param {Labels} labels
+     * The texts shown in the page, in the language of the site.
      */
-    constructor(labels) {
-        /**
-         * The texts shown in the page, in the language of the site.
-         * @type {Labels}
-         */
+    labels: Labels
+    /**
+     * The month summary, where the gap is shown.
+     */
+    summaryElement: Element
+    /**
+     * The progress bar of the month, where the expected bar is shown.
+     */
+    progressTrackElement: Element
+
+    constructor(labels: Labels) {
         this.labels = labels
 
-        /**
-         * The month summary, where the gap is shown.
-         * @type {Element}
-         */
-        this.summaryElement = document.querySelector(SELECTORS.summary)
-        if (!this.summaryElement) {
+        const summaryElement = document.querySelector(SELECTORS.summary)
+        if (!summaryElement) {
             throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_SUMMARY_NOT_FOUND}`)
         }
+        this.summaryElement = summaryElement
 
-        /**
-         * The progress bar of the month, where the expected bar is shown.
-         * @type {Element}
-         */
-        this.progressTrackElement = document.querySelector(SELECTORS.progressTrack)
-        if (!this.progressTrackElement) {
+        const progressTrackElement = document.querySelector(SELECTORS.progressTrack)
+        if (!progressTrackElement) {
             throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_PROGRESS_BAR_NOT_FOUND}`)
         }
+        this.progressTrackElement = progressTrackElement
         this.progressTrackElement.classList.add("relative")
-        this.progressTrackElement.querySelector("div").classList.add("relative", "z-[1]")
+        this.progressTrackElement.querySelector("div")!.classList.add("relative", "z-[1]")
     }
 
-    /**
-     * @returns {PageTime}
-     */
-    read() {
+    read(): PageTime {
         let [loggedMonthText, loggedMonthTextOk] = getTimeText(SELECTORS.loggedMonth)
         if (!loggedMonthTextOk) {
             throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_LOGGED_MONTH_NOT_FOUND}`)
@@ -811,21 +770,13 @@ class Page {
 
     /**
      * Redraws the expected bar and the gap from plan.
-     * @param {MonthPlan} plan
-     * @param {PageTime} time
-     * @returns {void}
      */
-    update(plan, time) {
+    update(plan: MonthPlan, time: PageTime): void {
         this.renderExpectedBar(plan, time)
         this.renderGap(plan, time)
     }
 
-    /**
-     * @param {PageTime} a
-     * @param {PageTime} b
-     * @returns {boolean}
-     */
-    static equal(a, b) {
+    static equal(a: PageTime, b: PageTime): boolean {
         return a.loggedMonthMinutes === b.loggedMonthMinutes
             && a.monthGoalMinutes === b.monthGoalMinutes
             && a.loggedTodayMinutes === b.loggedTodayMinutes
@@ -834,14 +785,10 @@ class Page {
     /**
      * Replaces the expected bar, shown only while the logged time is behind it.
      * Its width follows the goal shown by the site, as the progress bar of the site does.
-     * @param {MonthPlan} plan
-     * @param {PageTime} time
-     * @returns {void}
      */
-    renderExpectedBar(plan, time) {
+    renderExpectedBar(plan: MonthPlan, time: PageTime): void {
         const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
-        let expectedProgressBarElement = this.progressTrackElement.querySelector(".improved-logbar-expected-bar")
-        let barExists = expectedProgressBarElement !== null
+        let expectedProgressBarElement = this.progressTrackElement.querySelector<HTMLElement>(".improved-logbar-expected-bar")
 
         const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
         if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes) || expectedMinutes <= loggedTotalMinutes) {
@@ -849,7 +796,7 @@ class Page {
             return
         }
 
-        if (!barExists) {
+        if (!expectedProgressBarElement) {
             expectedProgressBarElement = document.createElement("div")
             expectedProgressBarElement.classList.add("improved-logbar-expected-bar")
             expectedProgressBarElement.style.width = `0%`
@@ -857,8 +804,7 @@ class Page {
         }
 
         let expectedProgressBarLabelElement = this.progressTrackElement.querySelector(".improved-logbar-expected-bar-label")
-        let barLabelExists = expectedProgressBarLabelElement !== null
-        if (!barLabelExists) {
+        if (!expectedProgressBarLabelElement) {
             expectedProgressBarLabelElement = document.createElement("span")
             expectedProgressBarLabelElement.classList.add("improved-logbar-expected-bar-label")
             expectedProgressBarElement.append(expectedProgressBarLabelElement)
@@ -873,11 +819,8 @@ class Page {
     /**
      * Replaces the gap, shown only while the goal of the month is not reached.
      * Below the time expected at the start of today, the gap is the delay; below the time expected at the end of today, it is the time remaining today.
-     * @param {MonthPlan} plan
-     * @param {PageTime} time
-     * @returns {void}
      */
-    renderGap(plan, time) {
+    renderGap(plan: MonthPlan, time: PageTime): void {
         this.summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
 
         if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes)) { return }
@@ -939,13 +882,12 @@ class Page {
 
     /**
      * Calls callback with the new time when one of the times changes, until an error occurs.
-     * @param {(time: PageTime) => void | Promise<void>} callback
-     * @returns {() => void} stops watching
+     * @returns stops watching
      */
-    watch(callback) {
+    watch(callback: (time: PageTime) => void | Promise<void>): () => void {
         let time = this.read()
 
-        const stop = (error) => {
+        const stop = (error: unknown) => {
             observer.disconnect()
             console.error(error)
             renderError(error, this.labels)
@@ -962,7 +904,7 @@ class Page {
                 stop(error)
             }
         })
-        observer.observe(document.querySelector(SELECTORS.main), { childList: true, subtree: true, characterData: true })
+        observer.observe(document.querySelector(SELECTORS.main)!, { childList: true, subtree: true, characterData: true })
         return () => observer.disconnect()
     }
 }
@@ -972,55 +914,49 @@ class Page {
  */
 class Settings {
     /**
-     * @param {string} lang
+     * The language chosen on the site, such as "fr".
      */
-    constructor(lang) {
-        /**
-         * The language chosen on the site, such as "fr".
-         * @type {string}
-         */
-        this.lang = lang
+    lang: string
+    /**
+     * The texts shown by the script, in lang.
+     */
+    labels: Labels
+    /**
+     * The block in the sidebar that holds every setting.
+     */
+    settingsElement: HTMLElement
+    /**
+     * The input of the planned capsules, only in the current month.
+     */
+    capsulesInputElement: HTMLInputElement | null
+    /**
+     * The plan settings of the month shown, replaced when the month changes.
+     */
+    planSectionElement: HTMLElement | null
 
-        /**
-         * The texts shown by the script, in lang.
-         * @type {Labels}
-         */
+    constructor(lang: string) {
+        this.lang = lang
         this.labels = getLabels(lang)
 
-        /**
-         * The block in the sidebar that holds every setting.
-         * @type {HTMLElement}
-         */
         this.settingsElement = document.createElement("section")
         this.settingsElement.className = "improved-logbar-settings"
 
-        /**
-         * The input of the planned capsules, only in the current month.
-         * @type {HTMLInputElement | null}
-         */
         this.capsulesInputElement = null
-
-        /**
-         * The plan settings of the month shown, replaced when the month changes.
-         * @type {HTMLElement | null}
-         */
         this.planSectionElement = null
     }
 
     /**
      * Reads the language chosen on the site, or English when none was chosen.
-     * @returns {Promise<Settings>}
      */
-    static async load() {
+    static async load(): Promise<Settings> {
         const localeCookie = await cookieStore.get(LANG_COOKIE_KEY)
         return new Settings(localeCookie?.value ?? "en")
     }
 
     /**
      * Adds the theme and the credit, and keeps the block at the bottom of the sidebar.
-     * @returns {void}
      */
-    mount() {
+    mount(): void {
         this.mountThemeSwitch()
 
         const creditElement = document.createElement("a")
@@ -1042,10 +978,7 @@ class Settings {
         new MutationObserver(attach).observe(document.body, { childList: true, subtree: true })
     }
 
-    /**
-     * @returns {void}
-     */
-    mountThemeSwitch() {
+    mountThemeSwitch(): void {
         let isDark = isDarkThemeChosen()
 
         const rowElement = document.createElement("div")
@@ -1081,12 +1014,11 @@ class Settings {
 
     /**
      * Replaces the plan settings with the days off, the planned hours and, in the current month, the planned capsules of plan, and redraws page after each change.
-     * @param {MonthPlan} plan
-     * @param {Page} page
-     * @param {Attendance} attendance - for the public holidays, the closures and the available capsules
-     * @returns {void}
+     * @param plan
+     * @param page
+     * @param attendance - for the public holidays, the closures and the available capsules
      */
-    mountPlan(plan, page, attendance) {
+    mountPlan(plan: MonthPlan, page: Page, attendance: Attendance): void {
         this.planSectionElement?.remove()
         this.capsulesInputElement = null
 
@@ -1136,21 +1068,22 @@ class Settings {
             capsulesRowElement.className = "improved-logbar-settings-row"
             capsulesRowElement.textContent = this.labels.CAPSULES_TO_USE
 
-            this.capsulesInputElement = document.createElement("input")
-            this.capsulesInputElement.type = "number"
-            this.capsulesInputElement.min = "0"
-            this.capsulesInputElement.step = "1"
+            const capsulesInputElement = document.createElement("input")
+            capsulesInputElement.type = "number"
+            capsulesInputElement.min = "0"
+            capsulesInputElement.step = "1"
+            this.capsulesInputElement = capsulesInputElement
             this.updateCapsules(plan, attendance.availableCapsules)
-            capsulesRowElement.append(this.capsulesInputElement)
+            capsulesRowElement.append(capsulesInputElement)
 
-            this.capsulesInputElement.addEventListener("change", () => {
-                const capsules = this.capsulesInputElement.valueAsNumber
+            capsulesInputElement.addEventListener("change", () => {
+                const capsules = capsulesInputElement.valueAsNumber
                 if (!Number.isInteger(capsules) || capsules < 0) {
-                    this.capsulesInputElement.value = String(plan.capsules)
+                    capsulesInputElement.value = String(plan.capsules)
                     return
                 }
-                plan.capsules = Math.min(capsules, Number(this.capsulesInputElement.max))
-                this.capsulesInputElement.value = String(plan.capsules)
+                plan.capsules = Math.min(capsules, Number(capsulesInputElement.max))
+                capsulesInputElement.value = String(plan.capsules)
                 savePlan()
             })
 
@@ -1163,11 +1096,8 @@ class Settings {
 
     /**
      * Shows the planned capsules of plan, at most availableCapsules.
-     * @param {MonthPlan} plan
-     * @param {number} availableCapsules
-     * @returns {void}
      */
-    updateCapsules(plan, availableCapsules) {
+    updateCapsules(plan: MonthPlan, availableCapsules: number): void {
         if (!this.capsulesInputElement) { return }
         this.capsulesInputElement.max = String(availableCapsules)
         this.capsulesInputElement.value = String(plan.capsules)
@@ -1181,34 +1111,35 @@ class Settings {
  * Shows the days of a month plan and toggles its days off, then dispatches change.
  */
 class CalendarWidget extends HTMLElement {
+    /**
+     * The plan whose days off are shown.
+     */
+    plan: MonthPlan | null
+    /**
+     * The public holidays and closures of the month, by day from 1.
+     */
+    dayMarks: Map<number, DayMark>
+    shadow: ShadowRoot
+    /**
+     * The grid of the days, created once the widget is in the page.
+     */
+    calendarElement: Element | null
+    /**
+     * The legend of the day marks, created once the widget is in the page.
+     */
+    legendElement: Element | null
+
     constructor() {
         super();
-        /**
-         * The plan whose days off are shown.
-         * @type {MonthPlan | null}
-         */
         this.plan = null
-        /**
-         * The public holidays and closures of the month, by day from 1.
-         * @type {Map<number, DayMark>}
-         */
         this.dayMarks = new Map()
-        /** @type {ShadowRoot} */
         this.shadow = this.attachShadow({ mode: 'open' })
-        /**
-         * The grid of the days, created once the widget is in the page.
-         * @type {Element | null}
-         */
         this.calendarElement = null
-        /**
-         * The legend of the day marks, created once the widget is in the page.
-         * @type {Element | null}
-         */
         this.legendElement = null
     }
 
-    /** @returns {void} */
-    connectedCallback() {
+    // noinspection JSUnusedGlobalSymbols
+    connectedCallback(): void {
         this.shadow.innerHTML = `
             <style>
                 .calendar {
@@ -1296,11 +1227,10 @@ class CalendarWidget extends HTMLElement {
     }
 
     /**
-     * @param {MonthPlan} plan
-     * @param {Map<number, DayMark>} dayMarks - the public holidays and closures of the month, by day from 1
-     * @returns {void}
+     * @param plan
+     * @param dayMarks - the public holidays and closures of the month, by day from 1
      */
-    setPlan(plan, dayMarks) {
+    setPlan(plan: MonthPlan, dayMarks: Map<number, DayMark>): void {
         this.plan = plan
         this.dayMarks = dayMarks
         this.render()
@@ -1308,10 +1238,9 @@ class CalendarWidget extends HTMLElement {
 
     /**
      * Draws the month of the plan in weeks from Monday, then the legend of its day marks, in the lang of the widget.
-     * @returns {void}
      */
-    render() {
-        if (!this.plan || !this.calendarElement) { return }
+    render(): void {
+        if (!this.plan || !this.calendarElement || !this.legendElement) { return }
 
         this.calendarElement.replaceChildren()
 
@@ -1328,7 +1257,7 @@ class CalendarWidget extends HTMLElement {
         }
 
         for (let day = 1; day <= getDaysInMonth(this.plan.year, this.plan.monthIndex); day++) {
-            this.calendarElement.append(this.renderDay(day))
+            this.calendarElement.append(this.renderDay(this.plan, day))
         }
 
         this.legendElement.replaceChildren()
@@ -1341,23 +1270,22 @@ class CalendarWidget extends HTMLElement {
     }
 
     /**
-     * @param {DayMark} mark
-     * @returns {string} the name of mark, in the lang of the widget
+     * @returns the name of mark, in the lang of the widget
      */
-    getMarkLabel(mark) {
+    getMarkLabel(mark: DayMark): string {
         const labels = getLabels(this.lang)
         return mark === "public-holiday" ? labels.PUBLIC_HOLIDAY : labels.CLOSURE
     }
 
     /**
      * Only the days after today can be toggled, as the others no longer change the gap.
-     * @param {number} day - the day of the month, from 1
-     * @returns {HTMLDivElement}
+     * @param plan
+     * @param day - the day of the month, from 1
      */
-    renderDay(day) {
+    renderDay(plan: MonthPlan, day: number): HTMLDivElement {
         const dayElement = document.createElement("div")
         dayElement.classList.add("calendar-day")
-        dayElement.classList.toggle("day-off", this.plan.daysOff.has(day))
+        dayElement.classList.toggle("day-off", plan.daysOff.has(day))
         dayElement.textContent = String(day)
 
         const mark = this.dayMarks.get(day)
@@ -1366,13 +1294,13 @@ class CalendarWidget extends HTMLElement {
             dayElement.title = this.getMarkLabel(mark)
         }
 
-        const isPast = new Date(this.plan.year, this.plan.monthIndex, day) <= new Date()
+        const isPast = new Date(plan.year, plan.monthIndex, day) <= new Date()
         if (isPast) {
             dayElement.classList.add("past")
         } else {
             dayElement.addEventListener("click", () => {
-                this.plan.toggleDayOff(day)
-                dayElement.classList.toggle("day-off", this.plan.daysOff.has(day))
+                plan.toggleDayOff(day)
+                dayElement.classList.toggle("day-off", plan.daysOff.has(day))
                 this.dispatchEvent(new Event("change"))
             })
         }
@@ -1383,20 +1311,21 @@ class CalendarWidget extends HTMLElement {
 customElements.define('improved-logbar-calendar', CalendarWidget)
 
 
+// noinspection JSUnusedGlobalSymbols
+interface HTMLElementTagNameMap {
+    "improved-logbar-calendar": CalendarWidget
+}
+
+
 // MAIN
-/**
- * @param {Error} error
- * @param {Labels} labels
- * @returns {void}
- */
-function renderError(error, labels) {
+function renderError(error: unknown, labels: Labels): void {
     const summaryElement = document.querySelector(SELECTORS.summary)
     if (summaryElement) {
         summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
 
         const errorElement = document.createElement("span")
         errorElement.className = "improved-logbar-gap-container"
-        errorElement.title = error.message
+        errorElement.title = error instanceof Error ? error.message : String(error)
         errorElement.textContent = labels.GAP_UNAVAILABLE
         summaryElement.prepend(errorElement)
     }
@@ -1404,10 +1333,8 @@ function renderError(error, labels) {
 
 /**
  * Calls callback when the query of the URL changes, as when the site shows another month without reloading.
- * @param {() => void} callback
- * @returns {void}
  */
-function watchUrl(callback) {
+function watchUrl(callback: () => void): void {
     let search = location.search
 
     // The site changes the URL without any event, but always renders the page again.
@@ -1420,11 +1347,11 @@ function watchUrl(callback) {
 
 /**
  * Shows the gap of the month in the URL.
- * @param {Settings} settings
- * @param {() => boolean} isOutdated - whether another month was shown since the start
- * @returns {Promise<() => void>} stops watching the page
+ * @param settings
+ * @param isOutdated - whether another month was shown since the start
+ * @returns stops watching the page
  */
-async function showMonthGap(settings, isOutdated) {
+async function showMonthGap(settings: Settings, isOutdated: () => boolean): Promise<() => void> {
     const attendance = await Attendance.fetch(settings.labels)
     if (isOutdated()) { return () => {} }
 
@@ -1440,7 +1367,7 @@ async function showMonthGap(settings, isOutdated) {
 
     const stopWatching = page.watch(async (time) => {
         // A capsule used on the site lowers the goal of the month.
-        if (plan.isCurrentMonth() && time.monthGoalMinutes !== plan.lastSync.monthGoalMinutes) {
+        if (plan.isCurrentMonth() && time.monthGoalMinutes !== plan.lastSync?.monthGoalMinutes) {
             const { availableCapsules } = await Attendance.fetch(settings.labels)
             plan.syncCapsules(availableCapsules, time.monthGoalMinutes)
             plan.save()
@@ -1453,8 +1380,7 @@ async function showMonthGap(settings, isOutdated) {
     return stopWatching
 }
 
-/** @returns {Promise<void>} */
-async function main() {
+async function main(): Promise<void> {
     const style = document.createElement("style")
     style.textContent = LAYOUT_STYLE + THEME_STYLE
     document.head.append(style)
@@ -1489,4 +1415,4 @@ async function main() {
     watchUrl(start)
 }
 
-main()
+main().catch((error) => console.error(error))

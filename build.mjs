@@ -3,7 +3,7 @@ import * as esbuild from "esbuild"
 const watch = process.argv.includes("--watch")
 
 const options = {
-    entryPoints: ["src/main.js"],
+    entryPoints: ["src/main.ts"],
     bundle: true,
     format: "iife",
     target: ["chrome111", "firefox128"],
