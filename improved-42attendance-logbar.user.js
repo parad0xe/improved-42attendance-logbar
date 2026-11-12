@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Improved 42Attendance Logbar
 // @namespace    https://github.com/parad0xe
-// @version      2026.11.16.1
+// @version      2026.11.16.2
 // @description  Show the gap with the expected logged time
 // @author       parad0xe
 // @match        https://attendance.42lyon.fr/me
@@ -916,7 +916,7 @@
         /**
          * Calls callback with the new time when one of the times changes, until an error occurs.
          * @param {(time: PageTime) => void | Promise<void>} callback
-         * @returns {void}
+         * @returns {() => void} stops watching
          */
         watch(callback) {
             let time = this.read()
@@ -939,6 +939,7 @@
                 }
             })
             observer.observe(document.querySelector(SELECTORS.main), { childList: true, subtree: true, characterData: true })
+            return () => observer.disconnect()
         }
     }
 
@@ -974,6 +975,12 @@
              * @type {HTMLInputElement | null}
              */
             this.capsulesInputElement = null
+
+            /**
+             * The plan settings of the month shown, replaced when the month changes.
+             * @type {HTMLElement | null}
+             */
+            this.planSectionElement = null
         }
 
         /**
@@ -1049,13 +1056,16 @@
         }
 
         /**
-         * Adds the days off, the planned hours and, in the current month, the planned capsules of plan, and redraws page after each change.
+         * Replaces the plan settings with the days off, the planned hours and, in the current month, the planned capsules of plan, and redraws page after each change.
          * @param {MonthPlan} plan
          * @param {Page} page
          * @param {number} availableCapsules
          * @returns {void}
          */
         mountPlan(plan, page, availableCapsules) {
+            this.planSectionElement?.remove()
+            this.capsulesInputElement = null
+
             const sectionElement = document.createElement("div")
             sectionElement.className = "improved-logbar-settings-section"
 
@@ -1123,6 +1133,7 @@
                 sectionElement.append(capsulesRowElement)
             }
 
+            this.planSectionElement = sectionElement
             this.settingsElement.prepend(sectionElement)
         }
 
@@ -1301,11 +1312,31 @@
     }
 
     /**
-     * @param {Settings} settings
-     * @returns {Promise<void>}
+     * Calls callback when the query of the URL changes, as when the site shows another month without reloading.
+     * @param {() => void} callback
+     * @returns {void}
      */
-    async function showMonthGap(settings) {
+    function watchUrl(callback) {
+        let search = location.search
+
+        // The site changes the URL without any event, but always renders the page again.
+        new MutationObserver(() => {
+            if (location.search === search) { return }
+            search = location.search
+            callback()
+        }).observe(document.body, { childList: true, subtree: true })
+    }
+
+    /**
+     * Shows the gap of the month in the URL.
+     * @param {Settings} settings
+     * @param {() => boolean} isOutdated - whether another month was shown since the start
+     * @returns {Promise<() => void>} stops watching the page
+     */
+    async function showMonthGap(settings, isOutdated) {
         const attendance = await Attendance.fetch(settings.labels)
+        if (isOutdated()) { return () => {} }
+
         const plan = MonthPlan.load(attendance)
         const page = new Page(settings.labels)
 
@@ -1316,7 +1347,7 @@
         }
         page.update(plan, time)
 
-        page.watch(async (time) => {
+        const stopWatching = page.watch(async (time) => {
             // A capsule used on the site lowers the goal of the month.
             if (plan.isCurrentMonth() && time.monthGoalMinutes !== plan.lastSync.monthGoalMinutes) {
                 const { availableCapsules } = await Attendance.fetch(settings.labels)
@@ -1328,6 +1359,7 @@
         })
 
         settings.mountPlan(plan, page, attendance.availableCapsules)
+        return stopWatching
     }
 
     /** @returns {Promise<void>} */
@@ -1339,12 +1371,31 @@
         const settings = await Settings.load()
         settings.mount()
 
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-            showMonthGap(settings).catch((error) => {
-                console.error(error)
-                renderError(error, settings.labels)
-            })
+        let lastRun = 0
+        let stopMonthGap = () => {}
+
+        const start = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+            const run = ++lastRun
+            const isOutdated = () => run !== lastRun
+
+            stopMonthGap()
+            showMonthGap(settings, isOutdated)
+                .then((stop) => {
+                    if (isOutdated()) {
+                        stop()
+                        return
+                    }
+                    stopMonthGap = stop
+                })
+                .catch((error) => {
+                    if (isOutdated()) { return }
+                    console.error(error)
+                    renderError(error, settings.labels)
+                })
         }))
+
+        start()
+        watchUrl(start)
     }
 
     main()
