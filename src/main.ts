@@ -69,12 +69,12 @@ async function startMonthImprovements({ settings, labels, isOutdated }: StartMon
     return stopWatching
 }
 
-async function main(): Promise<void> {
+function main(): void {
     const styleElement = document.createElement("style")
     styleElement.textContent = LAYOUT_STYLE + THEME_STYLE
     document.head.append(styleElement)
 
-    const lang = await loadLang()
+    const lang = loadLang()
     const labels = getLabels(lang)
 
     const themeSwitch = new ThemeSwitch(labels)
@@ -110,4 +110,4 @@ async function main(): Promise<void> {
     watchUrl(restartMonthImprovements)
 }
 
-main().catch((error) => console.error(error))
+main()
