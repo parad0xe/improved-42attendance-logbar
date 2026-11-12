@@ -10,7 +10,7 @@ interface CapsuleSync {
     monthGoalMinutes: number
 }
 
-interface MonthPlanData {
+interface StoredMonthPlan {
     /** the days of the month, from 1, with no planned time */
     daysOff: number[]
     /** the time planned on each remaining day */
@@ -66,9 +66,9 @@ export class MonthPlan {
         const { year, monthIndex } = attendance.calendar
 
         try {
-            const savedPlan = localStorage.getItem(MonthPlan.getStorageKey(year, monthIndex))
-            if (savedPlan !== null) {
-                const { daysOff, dailyMinutes, capsules = 0, lastSync = null }: MonthPlanData = JSON.parse(savedPlan)
+            const storedPlanJson = localStorage.getItem(MonthPlan.getStorageKey(year, monthIndex))
+            if (storedPlanJson !== null) {
+                const { daysOff, dailyMinutes, capsules = 0, lastSync = null }: StoredMonthPlan = JSON.parse(storedPlanJson)
                 const isValidSync = lastSync === null
                     || (Number.isInteger(lastSync.availableCapsules) && Number.isFinite(lastSync.monthGoalMinutes))
                 if (Array.isArray(daysOff) && daysOff.every(Number.isInteger) && Number.isFinite(dailyMinutes) && dailyMinutes >= 0
@@ -91,7 +91,7 @@ export class MonthPlan {
     }
 
     save(): void {
-        const storedPlan: MonthPlanData = {
+        const storedPlan: StoredMonthPlan = {
             daysOff: [...this.daysOff],
             dailyMinutes: this.dailyMinutes,
             capsules: this.capsules,

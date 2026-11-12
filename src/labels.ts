@@ -82,8 +82,8 @@ const LABELS: Record<string, Labels> = {
  * Reads the language chosen on the site, or English when none was chosen.
  */
 export async function loadLang(): Promise<string> {
-    const localeCookie = await cookieStore.get(LANG_COOKIE_KEY)
-    return localeCookie?.value ?? "en"
+    const langCookie = await cookieStore.get(LANG_COOKIE_KEY)
+    return langCookie?.value ?? "en"
 }
 
 /**

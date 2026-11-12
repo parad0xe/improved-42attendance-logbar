@@ -1,4 +1,4 @@
-import { SCRIPT_NAME } from "../constants"
+import { EXTENSION_NAME } from "../constants"
 import type { Labels } from "../labels"
 import { formatMinutes, parseMinutes } from "../lib/time"
 import type { MonthPlan } from "../models/month-plan"
@@ -55,13 +55,13 @@ export class Page {
 
         const summaryElement = document.querySelector(SELECTORS.summary)
         if (!summaryElement) {
-            throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_SUMMARY_NOT_FOUND}`)
+            throw new Error(`${EXTENSION_NAME}: ${this.labels.ERROR_SUMMARY_NOT_FOUND}`)
         }
         this.summaryElement = summaryElement
 
         const progressTrackElement = document.querySelector(SELECTORS.progressTrack)
         if (!progressTrackElement) {
-            throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_PROGRESS_BAR_NOT_FOUND}`)
+            throw new Error(`${EXTENSION_NAME}: ${this.labels.ERROR_PROGRESS_BAR_NOT_FOUND}`)
         }
         this.progressTrackElement = progressTrackElement
     }
@@ -77,12 +77,12 @@ export class Page {
     read(): PageTime {
         let [loggedMonthText, hasLoggedMonth] = readTimeText(SELECTORS.loggedMonth)
         if (!hasLoggedMonth) {
-            throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_LOGGED_MONTH_NOT_FOUND}`)
+            throw new Error(`${EXTENSION_NAME}: ${this.labels.ERROR_LOGGED_MONTH_NOT_FOUND}`)
         }
 
         let [monthGoalText, hasMonthGoal] = readTimeText(SELECTORS.monthGoal)
         if (!hasMonthGoal) {
-            throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_MONTH_GOAL_NOT_FOUND}`)
+            throw new Error(`${EXTENSION_NAME}: ${this.labels.ERROR_MONTH_GOAL_NOT_FOUND}`)
         }
 
         let isTimerStarted = document.querySelectorAll(SELECTORS.timerParts).length === 2
@@ -90,7 +90,7 @@ export class Page {
             ? readTimeText(SELECTORS.loggedToday)
             : ["00:00", true]
         if (!hasLoggedToday) {
-            console.warn(`${SCRIPT_NAME}: ${this.labels.WARNING_LOGGED_TODAY_NOT_FOUND}`)
+            console.warn(`${EXTENSION_NAME}: ${this.labels.WARNING_LOGGED_TODAY_NOT_FOUND}`)
         }
 
         return {
@@ -207,10 +207,10 @@ export class Page {
     }
 
     /**
-     * Calls callback with the new time when one of the times changes, until an error occurs.
+     * Calls onChange with the new time when one of the times changes, until an error occurs.
      * @returns stops watching
      */
-    watch(callback: (time: PageTime) => void | Promise<void>): () => void {
+    watch(onChange: (time: PageTime) => void | Promise<void>): () => void {
         let time = this.read()
 
         const stop = (error: unknown) => {
@@ -225,7 +225,7 @@ export class Page {
                 if (isSameTime(newTime, time)) { return }
 
                 time = newTime
-                Promise.resolve(callback(time)).catch(stop)
+                Promise.resolve(onChange(time)).catch(stop)
             } catch (error) {
                 stop(error)
             }

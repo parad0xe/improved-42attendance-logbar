@@ -38,7 +38,7 @@ class CalendarElement extends HTMLElement {
     connectedCallback(): void {
         this.shadow.innerHTML = `
             <style>
-                .calendar {
+                .grid {
                     width: 100%;
                     display: grid;
                     grid-template-columns: repeat(7, 1fr);
@@ -114,10 +114,10 @@ class CalendarElement extends HTMLElement {
                 .legend-mark { display: flex; align-items: center; gap: 0.25rem; }
             </style>
 
-            <div class="calendar"></div>
+            <div class="grid"></div>
             <div class="legend"></div>
         `
-        this.gridElement = this.shadow.querySelector(".calendar")
+        this.gridElement = this.shadow.querySelector(".grid")
         this.legendElement = this.shadow.querySelector(".legend")
         this.draw()
     }

@@ -1,4 +1,4 @@
-import { SCRIPT_NAME, WORKDAY_MINUTES } from "../constants"
+import { EXTENSION_NAME, WORKDAY_MINUTES } from "../constants"
 import type { Labels } from "../labels"
 import { decodeDevalue } from "../lib/devalue"
 import { getDaysInMonth } from "../lib/time"
@@ -42,7 +42,7 @@ export class Attendance {
         const { calendar, history } = data
 
         if (!Array.isArray(calendar?.workdays) || !calendar.workdays.every((day: unknown) => day instanceof Date)) {
-            throw new Error(`${SCRIPT_NAME}: ${labels.ERROR_WORKDAYS_MISSING}`)
+            throw new Error(`${EXTENSION_NAME}: ${labels.ERROR_WORKDAYS_MISSING}`)
         }
 
         this.calendar = {
@@ -61,14 +61,14 @@ export class Attendance {
     /**
      * Reports whether closures cover a full workday between 08:00 and 20:00, as on the site.
      */
-    isClosedDay(workday: Date): boolean {
-        const workdayStart = new Date(workday.getFullYear(), workday.getMonth(), workday.getDate(), CLOSURE_START_HOUR)
-        const workdayEnd = new Date(workday.getFullYear(), workday.getMonth(), workday.getDate(), CLOSURE_END_HOUR)
+    isClosedDay(date: Date): boolean {
+        const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), CLOSURE_START_HOUR)
+        const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), CLOSURE_END_HOUR)
 
         let closedMinutes = 0
         for (const closure of this.history.closures) {
-            const start = closure.beginAt > workdayStart ? closure.beginAt : workdayStart
-            const end = closure.endAt < workdayEnd ? closure.endAt : workdayEnd
+            const start = closure.beginAt > dayStart ? closure.beginAt : dayStart
+            const end = closure.endAt < dayEnd ? closure.endAt : dayEnd
             if (end > start) {
                 closedMinutes += (end.getTime() - start.getTime()) / (60 * 1000)
             }
@@ -118,13 +118,13 @@ export class Attendance {
     static async fetch(labels: Labels): Promise<Attendance> {
         const response = await fetch(`/me/__data.json${location.search}`, { credentials: "same-origin" })
         if (!response.ok) {
-            throw new Error(`${SCRIPT_NAME}: ${labels.ERROR_DATA_UNAVAILABLE(response.status)}`)
+            throw new Error(`${EXTENSION_NAME}: ${labels.ERROR_DATA_UNAVAILABLE(response.status)}`)
         }
 
         // SvelteKit can stream more chunks on the next lines; the page data is the first one.
         const page = JSON.parse((await response.text()).split("\n")[0])
         if (page.type === "redirect") {
-            throw new Error(`${SCRIPT_NAME}: ${labels.ERROR_SESSION_EXPIRED}`)
+            throw new Error(`${EXTENSION_NAME}: ${labels.ERROR_SESSION_EXPIRED}`)
         }
 
         const data = Object.assign({}, ...(page.nodes ?? [])

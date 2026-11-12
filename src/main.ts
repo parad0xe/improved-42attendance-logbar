@@ -7,7 +7,7 @@ import { Page } from "./ui/page"
 import { Settings } from "./ui/settings"
 import { ThemeSwitch } from "./ui/theme-switch"
 
-interface ShowMonthGapOptions {
+interface StartMonthImprovementsOptions {
     settings: Settings
     labels: Labels
     /** whether another month was shown since the start */
@@ -15,24 +15,24 @@ interface ShowMonthGapOptions {
 }
 
 /**
- * Calls callback when the query of the URL changes, as when the site shows another month without reloading.
+ * Calls onChange when the query of the URL changes, as when the site shows another month without reloading.
  */
-function watchUrl(callback: () => void): void {
+function watchUrl(onChange: () => void): void {
     let search = location.search
 
     // The site changes the URL without any event, but always renders the page again.
     new MutationObserver(() => {
         if (location.search === search) { return }
         search = location.search
-        callback()
+        onChange()
     }).observe(document.body, { childList: true, subtree: true })
 }
 
 /**
- * Shows the gap of the month in the URL.
+ * Starts the improvements of the month in the URL: the gap and the expected bar in the page, and the plan in the settings.
  * @returns stops watching the page
  */
-async function showMonthGap({ settings, labels, isOutdated }: ShowMonthGapOptions): Promise<() => void> {
+async function startMonthImprovements({ settings, labels, isOutdated }: StartMonthImprovementsOptions): Promise<() => void> {
     const attendance = await Attendance.fetch(labels)
     if (isOutdated()) { return () => {} }
 
@@ -84,20 +84,20 @@ async function main(): Promise<void> {
     settings.mount()
 
     let lastRun = 0
-    let stopMonthGap = () => {}
+    let stopMonthImprovements = () => {}
 
-    const start = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    const restartMonthImprovements = () => requestAnimationFrame(() => requestAnimationFrame(() => {
         const run = ++lastRun
         const isOutdated = () => run !== lastRun
 
-        stopMonthGap()
-        showMonthGap({ settings, labels, isOutdated })
+        stopMonthImprovements()
+        startMonthImprovements({ settings, labels, isOutdated })
             .then((stop) => {
                 if (isOutdated()) {
                     stop()
                     return
                 }
-                stopMonthGap = stop
+                stopMonthImprovements = stop
             })
             .catch((error) => {
                 if (isOutdated()) { return }
@@ -106,8 +106,8 @@ async function main(): Promise<void> {
             })
     }))
 
-    start()
-    watchUrl(start)
+    restartMonthImprovements()
+    watchUrl(restartMonthImprovements)
 }
 
 main().catch((error) => console.error(error))
