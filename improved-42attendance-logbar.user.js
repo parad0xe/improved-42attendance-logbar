@@ -432,6 +432,7 @@
     }
 
 
+    // OBJECTS
     class Attendance {
         /**
          * @param {Record<string, any>} data - the decoded data of the /me page
@@ -971,7 +972,7 @@
 
 
 
-    // CALENDAR WIDGET
+    // CUSTOM ELEMENTS - CALENDAR WIDGET
     /**
      * Shows the days of a month plan and toggles its days off, then dispatches change.
      */
