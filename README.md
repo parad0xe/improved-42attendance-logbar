@@ -1,12 +1,13 @@
 # Improved Attendance Logbar
 
-Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bonus or missing time compared with the time expected by today, based on your own days off and planned hours
+Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bonus or missing time compared with the time expected by today, based on your own days off, planned hours and capsules
 
 ## Features
 
 ### Gap
 
 - Shows your bonus or missing time, in hours and in days, compared with the time to have logged by today to reach the goal of the month with your plan
+- While your planned time of today is in progress, shows the time remaining today instead
 - Shows the time expected by today on the progress bar
 - Updates by itself when your logged time changes, without reloading the page
 
@@ -16,9 +17,10 @@ A block in the sidebar holds:
 
 - a calendar to choose your days off, with weekends, public holidays and campus closures selected by default
 - the hours you plan for each remaining day, 7 by default
+- in the current month, the capsules you plan to use, each one lowering the goal of the month by 7 hours
 - a switch between the light and dark themes
 
-Your days off and planned hours are saved for each month, and your theme is remembered
+Your days off, planned hours and capsules are saved for each month, and your theme is remembered. A capsule used on the site is removed from the planned ones
 
 ### Language
 
