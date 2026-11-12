@@ -58,6 +58,12 @@ export class Page {
             throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_PROGRESS_BAR_NOT_FOUND}`)
         }
         this.progressTrackElement = progressTrackElement
+    }
+
+    /**
+     * Lets the progress bar of the site hold the expected bar, under the logged time.
+     */
+    mount(): void {
         this.progressTrackElement.classList.add("relative")
         this.progressTrackElement.querySelector("div")!.classList.add("relative", "z-[1]")
     }
@@ -91,12 +97,12 @@ export class Page {
     /**
      * Redraws the expected bar and the gap from plan.
      */
-    update(plan: MonthPlan, time: PageTime): void {
+    render(plan: MonthPlan, time: PageTime): void {
         this.renderExpectedBar(plan, time)
         this.renderGap(plan, time)
     }
 
-    static equal(a: PageTime, b: PageTime): boolean {
+    private static equal(a: PageTime, b: PageTime): boolean {
         return a.loggedMonthMinutes === b.loggedMonthMinutes
             && a.monthGoalMinutes === b.monthGoalMinutes
             && a.loggedTodayMinutes === b.loggedTodayMinutes
@@ -106,7 +112,7 @@ export class Page {
      * Replaces the expected bar, shown only while the logged time is behind it.
      * Its width follows the goal shown by the site, as the progress bar of the site does.
      */
-    renderExpectedBar(plan: MonthPlan, time: PageTime): void {
+    private renderExpectedBar(plan: MonthPlan, time: PageTime): void {
         const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
         let expectedProgressBarElement = this.progressTrackElement.querySelector<HTMLElement>(".improved-logbar-expected-bar")
 
@@ -140,7 +146,7 @@ export class Page {
      * Replaces the gap, shown only while the goal of the month is not reached.
      * Below the time expected at the start of today, the gap is the delay; below the time expected at the end of today, it is the time remaining today.
      */
-    renderGap(plan: MonthPlan, time: PageTime): void {
+    private renderGap(plan: MonthPlan, time: PageTime): void {
         this.summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
 
         if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes)) { return }
@@ -210,7 +216,7 @@ export class Page {
         const stop = (error: unknown) => {
             observer.disconnect()
             console.error(error)
-            renderError(error, this.labels)
+            Page.renderError(error, this.labels)
         }
 
         const observer = new MutationObserver(() => {
@@ -227,17 +233,21 @@ export class Page {
         observer.observe(document.querySelector(SELECTORS.main)!, { childList: true, subtree: true, characterData: true })
         return () => observer.disconnect()
     }
-}
 
-export function renderError(error: unknown, labels: Labels): void {
-    const summaryElement = document.querySelector(SELECTORS.summary)
-    if (summaryElement) {
-        summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
+    /**
+     * Replaces the gap with a notice of the error.
+     * Static, as the error can come before any page is created, for example when the data of the month cannot be loaded.
+     */
+    static renderError(error: unknown, labels: Labels): void {
+        const summaryElement = document.querySelector(SELECTORS.summary)
+        if (summaryElement) {
+            summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
 
-        const errorElement = document.createElement("span")
-        errorElement.className = "improved-logbar-gap-container"
-        errorElement.title = error instanceof Error ? error.message : String(error)
-        errorElement.textContent = labels.GAP_UNAVAILABLE
-        summaryElement.prepend(errorElement)
+            const errorElement = document.createElement("span")
+            errorElement.className = "improved-logbar-gap-container"
+            errorElement.title = error instanceof Error ? error.message : String(error)
+            errorElement.textContent = labels.GAP_UNAVAILABLE
+            summaryElement.prepend(errorElement)
+        }
     }
 }

@@ -1,9 +1,18 @@
+import { getLabels, loadLang, type Labels } from "./labels"
 import { Attendance } from "./models/attendance"
 import { MonthPlan } from "./models/month-plan"
 import LAYOUT_STYLE from "./styles/layout.css"
 import THEME_STYLE from "./styles/theme.css"
-import { Page, renderError } from "./ui/page"
+import { Page } from "./ui/page"
 import { Settings } from "./ui/settings"
+import { ThemeSwitch } from "./ui/theme-switch"
+
+interface ShowMonthGapOptions {
+    settings: Settings
+    labels: Labels
+    /** whether another month was shown since the start */
+    isOutdated: () => boolean
+}
 
 /**
  * Calls callback when the query of the URL changes, as when the site shows another month without reloading.
@@ -21,36 +30,42 @@ function watchUrl(callback: () => void): void {
 
 /**
  * Shows the gap of the month in the URL.
- * @param settings
- * @param isOutdated - whether another month was shown since the start
  * @returns stops watching the page
  */
-async function showMonthGap(settings: Settings, isOutdated: () => boolean): Promise<() => void> {
-    const attendance = await Attendance.fetch(settings.labels)
+async function showMonthGap({ settings, labels, isOutdated }: ShowMonthGapOptions): Promise<() => void> {
+    const attendance = await Attendance.fetch(labels)
     if (isOutdated()) { return () => {} }
 
     const plan = MonthPlan.load(attendance)
-    const page = new Page(settings.labels)
+    const page = new Page(labels)
+    page.mount()
 
     const time = page.read()
     if (plan.isCurrentMonth()) {
         plan.syncCapsules(attendance.availableCapsules, time.monthGoalMinutes)
         plan.save()
     }
-    page.update(plan, time)
+    page.render(plan, time)
 
     const stopWatching = page.watch(async (time) => {
         // A capsule used on the site lowers the goal of the month.
         if (plan.isCurrentMonth() && time.monthGoalMinutes !== plan.lastSync?.monthGoalMinutes) {
-            const { availableCapsules } = await Attendance.fetch(settings.labels)
+            const { availableCapsules } = await Attendance.fetch(labels)
             plan.syncCapsules(availableCapsules, time.monthGoalMinutes)
             plan.save()
-            settings.updateCapsules(plan, availableCapsules)
+            settings.renderCapsules(plan, availableCapsules)
         }
-        page.update(plan, time)
+        page.render(plan, time)
     })
 
-    settings.mountPlan(plan, page, attendance)
+    settings.render({
+        plan,
+        attendance,
+        onChange: () => {
+            plan.save()
+            page.render(plan, page.read())
+        },
+    })
     return stopWatching
 }
 
@@ -59,7 +74,13 @@ async function main(): Promise<void> {
     style.textContent = LAYOUT_STYLE + THEME_STYLE
     document.head.append(style)
 
-    const settings = await Settings.load()
+    const lang = await loadLang()
+    const labels = getLabels(lang)
+
+    const themeSwitch = new ThemeSwitch(labels)
+    themeSwitch.mount()
+
+    const settings = new Settings({ lang, labels, themeSwitchElement: themeSwitch.element })
     settings.mount()
 
     let lastRun = 0
@@ -70,7 +91,7 @@ async function main(): Promise<void> {
         const isOutdated = () => run !== lastRun
 
         stopMonthGap()
-        showMonthGap(settings, isOutdated)
+        showMonthGap({ settings, labels, isOutdated })
             .then((stop) => {
                 if (isOutdated()) {
                     stop()
@@ -81,7 +102,7 @@ async function main(): Promise<void> {
             .catch((error) => {
                 if (isOutdated()) { return }
                 console.error(error)
-                renderError(error, settings.labels)
+                Page.renderError(error, labels)
             })
     }))
 

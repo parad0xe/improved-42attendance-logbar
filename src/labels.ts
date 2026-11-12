@@ -1,3 +1,5 @@
+const LANG_COOKIE_KEY = "PARAGLIDE_LOCALE"
+
 export interface Labels {
     /** from Monday */
     WEEKDAYS: string[]
@@ -74,6 +76,14 @@ const LABELS: Record<string, Labels> = {
         ERROR_MONTH_GOAL_NOT_FOUND: "cannot find the goal of the month, the page layout may have changed",
         WARNING_LOGGED_TODAY_NOT_FOUND: "cannot find the time logged today",
     },
+}
+
+/**
+ * Reads the language chosen on the site, or English when none was chosen.
+ */
+export async function loadLang(): Promise<string> {
+    const localeCookie = await cookieStore.get(LANG_COOKIE_KEY)
+    return localeCookie?.value ?? "en"
 }
 
 /**

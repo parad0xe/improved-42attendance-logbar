@@ -1,14 +1,27 @@
-import { getLabels, type Labels } from "../labels"
+import type { Labels } from "../labels"
 import type { Attendance } from "../models/attendance"
 import type { MonthPlan } from "../models/month-plan"
 import "./components/calendar"
-import type { Page } from "./page"
-import { isDarkThemeChosen, saveThemeChoice } from "./theme"
-
-const LANG_COOKIE_KEY = "PARAGLIDE_LOCALE"
 
 const SELECTORS = {
     sidebarContent: "[data-slot='sidebar-content']",
+}
+
+interface SettingsOptions {
+    /** the language chosen on the site, such as "fr" */
+    lang: string
+    /** the texts shown by the script, in lang */
+    labels: Labels
+    /** the row of the theme switch, shown between the plan and the credit */
+    themeSwitchElement: HTMLElement
+}
+
+interface SettingsRenderOptions {
+    plan: MonthPlan
+    /** for the public holidays, the closures and the available capsules */
+    attendance: Attendance
+    /** called after each change of the plan */
+    onChange: () => void
 }
 
 /**
@@ -26,7 +39,11 @@ export class Settings {
     /**
      * The block in the sidebar that holds every setting.
      */
-    settingsElement: HTMLElement
+    element: HTMLElement
+    /**
+     * The row of the theme switch, shown between the plan and the credit.
+     */
+    themeSwitchElement: HTMLElement
     /**
      * The input of the planned capsules, only in the current month.
      */
@@ -36,30 +53,23 @@ export class Settings {
      */
     planSectionElement: HTMLElement | null
 
-    constructor(lang: string) {
+    constructor({ lang, labels, themeSwitchElement }: SettingsOptions) {
         this.lang = lang
-        this.labels = getLabels(lang)
+        this.labels = labels
+        this.themeSwitchElement = themeSwitchElement
 
-        this.settingsElement = document.createElement("section")
-        this.settingsElement.className = "improved-logbar-settings"
+        this.element = document.createElement("section")
+        this.element.className = "improved-logbar-settings"
 
         this.capsulesInputElement = null
         this.planSectionElement = null
     }
 
     /**
-     * Reads the language chosen on the site, or English when none was chosen.
-     */
-    static async load(): Promise<Settings> {
-        const localeCookie = await cookieStore.get(LANG_COOKIE_KEY)
-        return new Settings(localeCookie?.value ?? "en")
-    }
-
-    /**
-     * Adds the theme and the credit, and keeps the block at the bottom of the sidebar.
+     * Adds the theme switch and the credit, and keeps the block at the bottom of the sidebar.
      */
     mount(): void {
-        this.mountThemeSwitch()
+        this.element.append(this.themeSwitchElement)
 
         const creditElement = document.createElement("a")
         creditElement.className = "improved-logbar-credit"
@@ -67,60 +77,23 @@ export class Settings {
         creditElement.target = "_blank"
         creditElement.rel = "noopener noreferrer"
         creditElement.textContent = "@nlallema"
-        this.settingsElement.append(creditElement)
+        this.element.append(creditElement)
 
         // The sidebar content can be rendered again, for example when the mobile sidebar opens.
         const attach = () => {
             const sidebarContentElement = document.querySelector(SELECTORS.sidebarContent)
-            if (sidebarContentElement && !sidebarContentElement.contains(this.settingsElement)) {
-                sidebarContentElement.append(this.settingsElement)
+            if (sidebarContentElement && !sidebarContentElement.contains(this.element)) {
+                sidebarContentElement.append(this.element)
             }
         }
         attach()
         new MutationObserver(attach).observe(document.body, { childList: true, subtree: true })
     }
 
-    mountThemeSwitch(): void {
-        let isDark = isDarkThemeChosen()
-
-        const rowElement = document.createElement("div")
-        rowElement.className = "improved-logbar-settings-row"
-        rowElement.textContent = this.labels.THEME
-
-        const switchElement = document.createElement("button")
-        switchElement.type = "button"
-        switchElement.className = "improved-logbar-theme-switch"
-        switchElement.title = this.labels.THEME
-        switchElement.setAttribute("aria-label", this.labels.THEME)
-
-        const applyTheme = () => {
-            const root = document.documentElement
-            if (root.classList.contains("dark") !== isDark) {
-                root.classList.toggle("dark", isDark)
-            }
-            switchElement.textContent = isDark ? "☀" : "☾"
-            switchElement.setAttribute("aria-pressed", String(isDark))
-        }
-
-        switchElement.addEventListener("click", () => {
-            isDark = !isDark
-            saveThemeChoice(isDark)
-            applyTheme()
-        })
-        rowElement.append(switchElement)
-        this.settingsElement.append(rowElement)
-
-        applyTheme()
-        new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
-    }
-
     /**
-     * Replaces the plan settings with the days off, the planned hours and, in the current month, the planned capsules of plan, and redraws page after each change.
-     * @param plan
-     * @param page
-     * @param attendance - for the public holidays, the closures and the available capsules
+     * Replaces the plan settings with the days off, the planned hours and, in the current month, the planned capsules of plan, and calls onChange after each change.
      */
-    mountPlan(plan: MonthPlan, page: Page, attendance: Attendance): void {
+    render({ plan, attendance, onChange }: SettingsRenderOptions): void {
         this.planSectionElement?.remove()
         this.capsulesInputElement = null
 
@@ -147,12 +120,7 @@ export class Settings {
         hoursInputElement.value = String(plan.dailyMinutes / 60)
         hoursRowElement.append(hoursInputElement)
 
-        const savePlan = () => {
-            plan.save()
-            page.update(plan, page.read())
-        }
-
-        calendarElement.addEventListener("change", savePlan)
+        calendarElement.addEventListener("change", onChange)
         hoursInputElement.addEventListener("change", () => {
             const hours = hoursInputElement.valueAsNumber
             if (!Number.isFinite(hours) || hours < 0 || hours > 24) {
@@ -160,7 +128,7 @@ export class Settings {
                 return
             }
             plan.dailyMinutes = Math.round(hours * 60)
-            savePlan()
+            onChange()
         })
 
         sectionElement.append(titleElement, calendarElement, hoursRowElement)
@@ -175,7 +143,7 @@ export class Settings {
             capsulesInputElement.min = "0"
             capsulesInputElement.step = "1"
             this.capsulesInputElement = capsulesInputElement
-            this.updateCapsules(plan, attendance.availableCapsules)
+            this.renderCapsules(plan, attendance.availableCapsules)
             capsulesRowElement.append(capsulesInputElement)
 
             capsulesInputElement.addEventListener("change", () => {
@@ -186,20 +154,20 @@ export class Settings {
                 }
                 plan.capsules = Math.min(capsules, Number(capsulesInputElement.max))
                 capsulesInputElement.value = String(plan.capsules)
-                savePlan()
+                onChange()
             })
 
             sectionElement.append(capsulesRowElement)
         }
 
         this.planSectionElement = sectionElement
-        this.settingsElement.prepend(sectionElement)
+        this.element.prepend(sectionElement)
     }
 
     /**
      * Shows the planned capsules of plan, at most availableCapsules.
      */
-    updateCapsules(plan: MonthPlan, availableCapsules: number): void {
+    renderCapsules(plan: MonthPlan, availableCapsules: number): void {
         if (!this.capsulesInputElement) { return }
         this.capsulesInputElement.max = String(availableCapsules)
         this.capsulesInputElement.value = String(plan.capsules)
