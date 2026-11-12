@@ -141,7 +141,7 @@ class CalendarElement extends HTMLElement {
 
         this.gridElement.replaceChildren()
 
-        for (const weekday of getLabels(this.lang).WEEKDAYS) {
+        for (const weekday of getLabels(this.lang).CALENDAR_WEEKDAYS) {
             const weekdayElement = document.createElement("div")
             weekdayElement.classList.add("calendar-weekday")
             weekdayElement.textContent = weekday
@@ -171,7 +171,7 @@ class CalendarElement extends HTMLElement {
      */
     private getMarkLabel(mark: DayMark): string {
         const labels = getLabels(this.lang)
-        return mark === "public-holiday" ? labels.PUBLIC_HOLIDAY : labels.CLOSURE
+        return mark === "public-holiday" ? labels.CALENDAR_PUBLIC_HOLIDAY : labels.CALENDAR_CLOSURE
     }
 
     /**

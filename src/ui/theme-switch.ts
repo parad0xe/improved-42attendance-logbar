@@ -9,9 +9,9 @@ type Theme = "light" | "dark"
  */
 function loadTheme(): Theme {
     try {
-        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-        if (savedTheme !== null) {
-            return savedTheme === "dark" ? "dark" : "light"
+        const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+        if (storedTheme !== null) {
+            return storedTheme === "dark" ? "dark" : "light"
         }
     } catch {
         // The storage can be unavailable, for example in a private window.
@@ -46,13 +46,13 @@ export class ThemeSwitch {
 
         this.element = document.createElement("div")
         this.element.className = "improved-logbar-settings-row"
-        this.element.textContent = labels.THEME
+        this.element.textContent = labels.SETTINGS_THEME
 
         this.switchElement = document.createElement("button")
         this.switchElement.type = "button"
         this.switchElement.className = "improved-logbar-theme-switch"
-        this.switchElement.title = labels.THEME
-        this.switchElement.setAttribute("aria-label", labels.THEME)
+        this.switchElement.title = labels.SETTINGS_THEME
+        this.switchElement.setAttribute("aria-label", labels.SETTINGS_THEME)
 
         this.switchElement.addEventListener("click", () => {
             this.theme = this.theme === "dark" ? "light" : "dark"

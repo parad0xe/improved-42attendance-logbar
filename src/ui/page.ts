@@ -164,11 +164,11 @@ export class Page {
             gapDirection = {
                 label: `-${formatMinutes(gapMinutes)}`,
                 className: "improved-logbar-missing",
-                formatDays: this.labels.MISSING_DAYS,
+                formatDays: this.labels.GAP_MISSING_DAYS,
             }
         } else if (loggedTotalMinutes < end) {
             gapDirection = {
-                label: this.labels.REMAINING_TODAY(formatMinutes(gapMinutes)),
+                label: this.labels.GAP_REMAINING_TODAY(formatMinutes(gapMinutes)),
                 className: "improved-logbar-in-progress",
                 formatDays: null,
             }
@@ -176,7 +176,7 @@ export class Page {
             gapDirection = {
                 label: `+${formatMinutes(gapMinutes)}`,
                 className: "improved-logbar-bonus",
-                formatDays: this.labels.BONUS_DAYS,
+                formatDays: this.labels.GAP_BONUS_DAYS,
             }
         }
 
@@ -186,7 +186,7 @@ export class Page {
 
         const gapTimeElement = document.createElement("strong")
         gapTimeElement.classList.add(gapDirection.className)
-        gapTimeElement.title = this.labels.EXPECTED(formatMinutes(expectedMinutes))
+        gapTimeElement.title = this.labels.GAP_EXPECTED(formatMinutes(expectedMinutes))
         gapTimeElement.textContent = gapDirection.label
         gapContainerElement.prepend(gapTimeElement)
 
@@ -201,7 +201,7 @@ export class Page {
         if (plan.isCurrentMonth() && plan.capsules > 0) {
             const gapCapsuleElement = document.createElement("span")
             gapCapsuleElement.className = "improved-logbar-gap-capsule"
-            gapCapsuleElement.textContent = `(${this.labels.CAPSULES_LEFT(plan.capsules)})`
+            gapCapsuleElement.textContent = `(${this.labels.GAP_CAPSULES_LEFT(plan.capsules)})`
             gapContainerElement.append(gapCapsuleElement)
         }
     }

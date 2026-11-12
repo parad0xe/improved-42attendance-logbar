@@ -102,7 +102,7 @@ export class Settings {
 
         const titleElement = document.createElement("span")
         titleElement.className = "improved-logbar-settings-title"
-        titleElement.textContent = this.labels.DAYS_OFF
+        titleElement.textContent = this.labels.SETTINGS_DAYS_OFF
 
         const calendarElement = document.createElement("improved-logbar-calendar")
         calendarElement.lang = this.lang
@@ -110,7 +110,7 @@ export class Settings {
 
         const hoursRowElement = document.createElement("label")
         hoursRowElement.className = "improved-logbar-settings-row"
-        hoursRowElement.textContent = this.labels.HOURS_PER_REMAINING_DAY
+        hoursRowElement.textContent = this.labels.SETTINGS_HOURS_PER_REMAINING_DAY
 
         const hoursInputElement = document.createElement("input")
         hoursInputElement.type = "number"
@@ -136,7 +136,7 @@ export class Settings {
         if (plan.isCurrentMonth()) {
             const capsulesRowElement = document.createElement("label")
             capsulesRowElement.className = "improved-logbar-settings-row"
-            capsulesRowElement.textContent = this.labels.CAPSULES_TO_USE
+            capsulesRowElement.textContent = this.labels.SETTINGS_CAPSULES_TO_USE
 
             const capsulesInputElement = document.createElement("input")
             capsulesInputElement.type = "number"

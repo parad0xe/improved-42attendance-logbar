@@ -1,20 +1,23 @@
 const LANG_COOKIE_KEY = "PARAGLIDE_LOCALE"
 
 export interface Labels {
-    /** from Monday */
-    WEEKDAYS: string[]
-    THEME: string
-    DAYS_OFF: string
-    HOURS_PER_REMAINING_DAY: string
-    EXPECTED: (time: string) => string
-    BONUS_DAYS: (days: number) => string
-    MISSING_DAYS: (days: number) => string
-    REMAINING_TODAY: (time: string) => string
-    CAPSULES_TO_USE: string
-    CAPSULES_LEFT: (count: number) => string
-    PUBLIC_HOLIDAY: string
-    CLOSURE: string
+    SETTINGS_THEME: string
+    SETTINGS_DAYS_OFF: string
+    SETTINGS_HOURS_PER_REMAINING_DAY: string
+    SETTINGS_CAPSULES_TO_USE: string
+
+    GAP_EXPECTED: (time: string) => string
+    GAP_BONUS_DAYS: (days: number) => string
+    GAP_MISSING_DAYS: (days: number) => string
+    GAP_REMAINING_TODAY: (time: string) => string
+    GAP_CAPSULES_LEFT: (count: number) => string
     GAP_UNAVAILABLE: string
+
+    /** from Monday */
+    CALENDAR_WEEKDAYS: string[]
+    CALENDAR_PUBLIC_HOLIDAY: string
+    CALENDAR_CLOSURE: string
+
     ERROR_WORKDAYS_MISSING: string
     ERROR_DATA_UNAVAILABLE: (status: number) => string
     ERROR_SESSION_EXPIRED: string
@@ -27,20 +30,21 @@ export interface Labels {
 
 const LABELS: Record<string, Labels> = {
     fr: {
-        WEEKDAYS: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
-        THEME: "Thème",
-        DAYS_OFF: "Jours de repos",
-        HOURS_PER_REMAINING_DAY: "Heures par jour restant",
+        SETTINGS_THEME: "Thème",
+        SETTINGS_DAYS_OFF: "Jours de repos",
+        SETTINGS_HOURS_PER_REMAINING_DAY: "Heures par jour restant",
+        SETTINGS_CAPSULES_TO_USE: "Capsules à poser",
+
+        GAP_EXPECTED: (time) => `Prévu ${time}`,
+        GAP_BONUS_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour" : "jours"} bonus`,
+        GAP_MISSING_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour manquant" : "jours manquants"}`,
+        GAP_REMAINING_TODAY: (time) => `reste ${time} aujourd'hui`,
+        GAP_CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} à poser`,
         GAP_UNAVAILABLE: "écart indisponible",
 
-        EXPECTED: (time) => `Prévu ${time}`,
-        BONUS_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour" : "jours"} bonus`,
-        MISSING_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour manquant" : "jours manquants"}`,
-        REMAINING_TODAY: (time) => `reste ${time} aujourd'hui`,
-        CAPSULES_TO_USE: "Capsules à poser",
-        CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} à poser`,
-        PUBLIC_HOLIDAY: "Jour férié",
-        CLOSURE: "Fermeture de l'école",
+        CALENDAR_WEEKDAYS: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
+        CALENDAR_PUBLIC_HOLIDAY: "Jour férié",
+        CALENDAR_CLOSURE: "Fermeture de l'école",
 
         ERROR_WORKDAYS_MISSING: "les jours ouvrés du mois sont introuvables, la page a peut-être changé",
         ERROR_DATA_UNAVAILABLE: (status) => `impossible de charger les données d'attendance (HTTP ${status})`,
@@ -52,20 +56,21 @@ const LABELS: Record<string, Labels> = {
         WARNING_LOGGED_TODAY_NOT_FOUND: "impossible de trouver le temps logué aujourd'hui",
     },
     en: {
-        WEEKDAYS: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        THEME: "Theme",
-        DAYS_OFF: "Days off",
-        HOURS_PER_REMAINING_DAY: "Hours per remaining day",
+        SETTINGS_THEME: "Theme",
+        SETTINGS_DAYS_OFF: "Days off",
+        SETTINGS_HOURS_PER_REMAINING_DAY: "Hours per remaining day",
+        SETTINGS_CAPSULES_TO_USE: "Capsules to use",
+
+        GAP_EXPECTED: (time) => `Expected ${time}`,
+        GAP_BONUS_DAYS: (days) => `${days.toFixed(1)} bonus ${days < 2 ? "day" : "days"}`,
+        GAP_MISSING_DAYS: (days) => `${days.toFixed(1)} missing ${days < 2 ? "day" : "days"}`,
+        GAP_REMAINING_TODAY: (time) => `remaining ${time} today`,
+        GAP_CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} to use`,
         GAP_UNAVAILABLE: "gap unavailable",
 
-        EXPECTED: (time) => `Expected ${time}`,
-        BONUS_DAYS: (days) => `${days.toFixed(1)} bonus ${days < 2 ? "day" : "days"}`,
-        MISSING_DAYS: (days) => `${days.toFixed(1)} missing ${days < 2 ? "day" : "days"}`,
-        REMAINING_TODAY: (time) => `remaining ${time} today`,
-        CAPSULES_TO_USE: "Capsules to use",
-        CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} to use`,
-        PUBLIC_HOLIDAY: "Public holiday",
-        CLOSURE: "School closure",
+        CALENDAR_WEEKDAYS: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        CALENDAR_PUBLIC_HOLIDAY: "Public holiday",
+        CALENDAR_CLOSURE: "School closure",
 
         ERROR_WORKDAYS_MISSING: "the working days of the month are missing, the page may have changed",
         ERROR_DATA_UNAVAILABLE: (status) => `cannot load the attendance data (HTTP ${status})`,
