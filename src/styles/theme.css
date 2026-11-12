@@ -1,0 +1,110 @@
+:root {
+    --improved-logbar-bonus: #15803d;
+    --improved-logbar-missing: #612c2c;
+    --improved-logbar-in-progress: #cd9b2a;
+    --improved-logbar-expected-bar: #ffca0033;
+    --improved-logbar-expected-label: #4e2f08a1;
+    --improved-logbar-gap-capsule: #b45309;
+    --improved-logbar-public-holiday: #7c3aed;
+    --improved-logbar-closure: #0d9488;
+
+    --improved-logbar-day-border: #e4e4e7;
+    --improved-logbar-day-hover: #f4f4f5;
+    --improved-logbar-day-off-background: #dbeafe;
+    --improved-logbar-day-off-border: #93c5fd;
+    --improved-logbar-day-off-text: #1d4ed8;
+    --improved-logbar-past-day-border: #f4f4f5;
+    --improved-logbar-past-day-text: #a1a1aa;
+    --improved-logbar-past-day-off-background: #f4f4f5;
+}
+
+html.dark {
+    color-scheme: dark !important;
+
+    --background: oklch(17% 0.012 260);
+    --foreground: oklch(96% 0.005 260);
+    --card: oklch(21% 0.014 260);
+    --card-foreground: oklch(96% 0.005 260);
+    --popover: oklch(21% 0.014 260);
+    --popover-foreground: oklch(96% 0.005 260);
+    --primary: oklch(92% 0.01 260);
+    --primary-foreground: oklch(21% 0.014 260);
+    --secondary: oklch(27% 0.015 260);
+    --secondary-foreground: oklch(96% 0.005 260);
+    --muted: oklch(27% 0.015 260);
+    --muted-foreground: oklch(71% 0.02 260);
+    --accent: oklch(29% 0.018 260);
+    --accent-foreground: oklch(96% 0.005 260);
+    --destructive: oklch(70% 0.19 22);
+    --border: oklch(100% 0 0 / 9%);
+    --input: oklch(100% 0 0 / 14%);
+    --ring: oklch(56% 0.02 260);
+    --sidebar: oklch(19% 0.013 260);
+    --sidebar-foreground: oklch(96% 0.005 260);
+    --sidebar-primary: oklch(62% 0.19 260);
+    --sidebar-primary-foreground: oklch(98% 0 0);
+    --sidebar-accent: oklch(27% 0.015 260);
+    --sidebar-accent-foreground: oklch(96% 0.005 260);
+    --sidebar-border: oklch(100% 0 0 / 9%);
+    --sidebar-ring: oklch(56% 0.02 260);
+
+    --shadow-sm: 0 1px 3px 0 #00000066;
+    --shadow: 0 1px 3px 0 #00000066;
+    --shadow-md: 0 2px 6px -1px #00000080;
+    --shadow-lg: 0 4px 10px -2px #00000080;
+
+    --dark-cerulean: #6c9be0;
+    --cg-blue: #2bb3d4;
+    --violet: #a77bff;
+
+    --improved-logbar-bonus: #4ade80;
+    --improved-logbar-missing: #f87171;
+    --improved-logbar-in-progress: #fbbf24;
+    --improved-logbar-expected-bar: #facc1530;
+    --improved-logbar-expected-label: #fde68ab3;
+    --improved-logbar-gap-capsule: #ca7016;
+    --improved-logbar-public-holiday: #a78bfa;
+    --improved-logbar-closure: #2dd4bf;
+
+    --improved-logbar-day-border: oklch(100% 0 0 / 12%);
+    --improved-logbar-day-hover: oklch(100% 0 0 / 6%);
+    --improved-logbar-day-off-background: #3b82f633;
+    --improved-logbar-day-off-border: #3b82f680;
+    --improved-logbar-day-off-text: #93c5fd;
+    --improved-logbar-past-day-border: oklch(100% 0 0 / 5%);
+    --improved-logbar-past-day-text: oklch(100% 0 0 / 30%);
+    --improved-logbar-past-day-off-background: oklch(100% 0 0 / 6%);
+}
+
+@layer utilities {
+    :where(.dark) .bg-white { background-color: var(--card); }
+    :where(.dark) .bg-neutral-50,
+    :where(.dark) .bg-slate-100,
+    :where(.dark) .bg-slate-200 { background-color: var(--muted); }
+    :where(.dark) .text-black,
+    :where(.dark) .text-neutral-900 { color: var(--foreground); }
+    :where(.dark) .text-neutral-600,
+    :where(.dark) .text-neutral-500,
+    :where(.dark) .text-slate-700,
+    :where(.dark) .text-slate-600 { color: var(--muted-foreground); }
+    :where(.dark) .border-neutral-200,
+    :where(.dark) .border-slate-200 { border-color: var(--border); }
+    :where(.dark) .fill-black { fill: var(--foreground); }
+    :where(.dark) .bg-blue-100,
+    :where(.dark) .bg-blue-200 { background-color: color-mix(in oklab, var(--color-blue-500) 20%, transparent); }
+    :where(.dark) .border-blue-200 { border-color: color-mix(in oklab, var(--color-blue-500) 40%, transparent); }
+    :where(.dark) .text-blue-700 { color: var(--color-blue-400); }
+    :where(.dark) .bg-emerald-100 { background-color: color-mix(in oklab, var(--color-emerald-500) 20%, transparent); }
+    :where(.dark) .border-emerald-200 { border-color: color-mix(in oklab, var(--color-emerald-500) 40%, transparent); }
+    :where(.dark) .text-emerald-700 { color: var(--color-emerald-500); }
+    :where(.dark) span.bg-yellow-400\/60 {
+        background-color: color-mix(in oklab, var(--color-yellow-400) 20%, transparent);
+        color: var(--color-yellow-400);
+    }
+    :where(.dark) div.bg-yellow-400\/60 {
+        background-color: color-mix(in oklab, var(--color-amber-400) 55%, transparent);
+    }
+    :where(.dark) div.bg-yellow-400\/20 {
+        background-color: color-mix(in oklab, var(--color-amber-400) 22%, transparent);
+    }
+}

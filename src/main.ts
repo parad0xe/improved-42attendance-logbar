@@ -1,64 +1,15 @@
-// CONSTANTES
-const SCRIPT_NAME = "Improved Attendance Logbar"
+import { SCRIPT_NAME, WORKDAY_MINUTES } from "./constants"
+import { getLabels, type Labels } from "./labels"
+import { decodeDevalue } from "./lib/devalue"
+import { formatMinutes, getDaysInMonth, parseMinutes } from "./lib/time"
+import LAYOUT_STYLE from "./styles/layout.css"
+import THEME_STYLE from "./styles/theme.css"
+import { isDarkThemeChosen, saveThemeChoice } from "./ui/theme"
 
-const THEME_STORAGE_KEY = "improved-logbar-theme"
+// CONSTANTES
 const PLAN_STORAGE_KEY = "improved-logbar-plan"
 const LANG_COOKIE_KEY = "PARAGLIDE_LOCALE"
 
-const LABELS: Record<string, Labels> = {
-    fr: {
-        WEEKDAYS: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
-        THEME: "Thème",
-        DAYS_OFF: "Jours de repos",
-        HOURS_PER_REMAINING_DAY: "Heures par jour restant",
-        GAP_UNAVAILABLE: "écart indisponible",
-
-        EXPECTED: (time) => `Prévu ${time}`,
-        BONUS_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour" : "jours"} bonus`,
-        MISSING_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour manquant" : "jours manquants"}`,
-        REMAINING_TODAY: (time) => `reste ${time} aujourd'hui`,
-        CAPSULES_TO_USE: "Capsules à poser",
-        CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} à poser`,
-        PUBLIC_HOLIDAY: "Jour férié",
-        CLOSURE: "Fermeture de l'école",
-
-        ERROR_WORKDAYS_MISSING: "les jours ouvrés du mois sont introuvables, la page a peut-être changé",
-        ERROR_DATA_UNAVAILABLE: (status) => `impossible de charger les données d'attendance (HTTP ${status})`,
-        ERROR_SESSION_EXPIRED: "la session a expiré, rechargez la page",
-        ERROR_SUMMARY_NOT_FOUND: "impossible de trouver le résumé du mois, la mise en page a peut-être changé",
-        ERROR_PROGRESS_BAR_NOT_FOUND: "impossible de trouver la barre de progression, la mise en page a peut-être changé",
-        ERROR_LOGGED_MONTH_NOT_FOUND: "impossible de trouver le temps logué du mois, la mise en page a peut-être changé",
-        ERROR_MONTH_GOAL_NOT_FOUND: "impossible de trouver l'objectif du mois, la mise en page a peut-être changé",
-        WARNING_LOGGED_TODAY_NOT_FOUND: "impossible de trouver le temps logué aujourd'hui",
-    },
-    en: {
-        WEEKDAYS: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        THEME: "Theme",
-        DAYS_OFF: "Days off",
-        HOURS_PER_REMAINING_DAY: "Hours per remaining day",
-        GAP_UNAVAILABLE: "gap unavailable",
-
-        EXPECTED: (time) => `Expected ${time}`,
-        BONUS_DAYS: (days) => `${days.toFixed(1)} bonus ${days < 2 ? "day" : "days"}`,
-        MISSING_DAYS: (days) => `${days.toFixed(1)} missing ${days < 2 ? "day" : "days"}`,
-        REMAINING_TODAY: (time) => `remaining ${time} today`,
-        CAPSULES_TO_USE: "Capsules to use",
-        CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} to use`,
-        PUBLIC_HOLIDAY: "Public holiday",
-        CLOSURE: "School closure",
-
-        ERROR_WORKDAYS_MISSING: "the working days of the month are missing, the page may have changed",
-        ERROR_DATA_UNAVAILABLE: (status) => `cannot load the attendance data (HTTP ${status})`,
-        ERROR_SESSION_EXPIRED: "the session has expired, reload the page",
-        ERROR_SUMMARY_NOT_FOUND: "cannot find the month summary, the page layout may have changed",
-        ERROR_PROGRESS_BAR_NOT_FOUND: "cannot find the progress bar, the page layout may have changed",
-        ERROR_LOGGED_MONTH_NOT_FOUND: "cannot find the logged time of the month, the page layout may have changed",
-        ERROR_MONTH_GOAL_NOT_FOUND: "cannot find the goal of the month, the page layout may have changed",
-        WARNING_LOGGED_TODAY_NOT_FOUND: "cannot find the time logged today",
-    },
-}
-
-const WORKDAY_MINUTES = 7 * 60
 const CLOSURE_START_HOUR = 8
 const CLOSURE_END_HOUR = 20
 
@@ -72,183 +23,6 @@ const SELECTORS = {
     timerParts: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div > span",
     loggedToday: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(1)",
 }
-
-const THEME_STYLE = `
-        html.dark {
-            color-scheme: dark !important;
-        
-            --background: oklch(17% 0.012 260);
-            --foreground: oklch(96% 0.005 260);
-            --card: oklch(21% 0.014 260);
-            --card-foreground: oklch(96% 0.005 260);
-            --popover: oklch(21% 0.014 260);
-            --popover-foreground: oklch(96% 0.005 260);
-            --primary: oklch(92% 0.01 260);
-            --primary-foreground: oklch(21% 0.014 260);
-            --secondary: oklch(27% 0.015 260);
-            --secondary-foreground: oklch(96% 0.005 260);
-            --muted: oklch(27% 0.015 260);
-            --muted-foreground: oklch(71% 0.02 260);
-            --accent: oklch(29% 0.018 260);
-            --accent-foreground: oklch(96% 0.005 260);
-            --destructive: oklch(70% 0.19 22);
-            --border: oklch(100% 0 0 / 9%);
-            --input: oklch(100% 0 0 / 14%);
-            --ring: oklch(56% 0.02 260);
-            --sidebar: oklch(19% 0.013 260);
-            --sidebar-foreground: oklch(96% 0.005 260);
-            --sidebar-primary: oklch(62% 0.19 260);
-            --sidebar-primary-foreground: oklch(98% 0 0);
-            --sidebar-accent: oklch(27% 0.015 260);
-            --sidebar-accent-foreground: oklch(96% 0.005 260);
-            --sidebar-border: oklch(100% 0 0 / 9%);
-            --sidebar-ring: oklch(56% 0.02 260);
-        
-            --shadow-sm: 0 1px 3px 0 #00000066;
-            --shadow: 0 1px 3px 0 #00000066;
-            --shadow-md: 0 2px 6px -1px #00000080;
-            --shadow-lg: 0 4px 10px -2px #00000080;
-        
-            --dark-cerulean: #6c9be0;
-            --cg-blue: #2bb3d4;
-            --violet: #a77bff;
-        
-            --improved-logbar-bonus: #4ade80;
-            --improved-logbar-missing: #f87171;
-            --improved-logbar-in-progress: #fbbf24;
-            --improved-logbar-expected-bar: #facc1530;
-            --improved-logbar-expected-label: #fde68ab3;
-            --improved-logbar-gap-capsule: #ca7016;
-            --improved-logbar-public-holiday: #a78bfa;
-            --improved-logbar-closure: #2dd4bf;
-
-            --improved-logbar-day-border: oklch(100% 0 0 / 12%);
-            --improved-logbar-day-hover: oklch(100% 0 0 / 6%);
-            --improved-logbar-day-off-background: #3b82f633;
-            --improved-logbar-day-off-border: #3b82f680;
-            --improved-logbar-day-off-text: #93c5fd;
-            --improved-logbar-past-day-border: oklch(100% 0 0 / 5%);
-            --improved-logbar-past-day-text: oklch(100% 0 0 / 30%);
-            --improved-logbar-past-day-off-background: oklch(100% 0 0 / 6%);
-        }
-    
-        @layer utilities {
-            :where(.dark) .bg-white { background-color: var(--card); }
-            :where(.dark) .bg-neutral-50,
-            :where(.dark) .bg-slate-100,
-            :where(.dark) .bg-slate-200 { background-color: var(--muted); }
-            :where(.dark) .text-black,
-            :where(.dark) .text-neutral-900 { color: var(--foreground); }
-            :where(.dark) .text-neutral-600,
-            :where(.dark) .text-neutral-500,
-            :where(.dark) .text-slate-700,
-            :where(.dark) .text-slate-600 { color: var(--muted-foreground); }
-            :where(.dark) .border-neutral-200,
-            :where(.dark) .border-slate-200 { border-color: var(--border); }
-            :where(.dark) .fill-black { fill: var(--foreground); }
-            :where(.dark) .bg-blue-100,
-            :where(.dark) .bg-blue-200 { background-color: color-mix(in oklab, var(--color-blue-500) 20%, transparent); }
-            :where(.dark) .border-blue-200 { border-color: color-mix(in oklab, var(--color-blue-500) 40%, transparent); }
-            :where(.dark) .text-blue-700 { color: var(--color-blue-400); }
-            :where(.dark) .bg-emerald-100 { background-color: color-mix(in oklab, var(--color-emerald-500) 20%, transparent); }
-            :where(.dark) .border-emerald-200 { border-color: color-mix(in oklab, var(--color-emerald-500) 40%, transparent); }
-            :where(.dark) .text-emerald-700 { color: var(--color-emerald-500); }
-            :where(.dark) span.bg-yellow-400\\/60 {
-                background-color: color-mix(in oklab, var(--color-yellow-400) 20%, transparent);
-                color: var(--color-yellow-400);
-            }
-            :where(.dark) div.bg-yellow-400\\/60 {
-                background-color: color-mix(in oklab, var(--color-amber-400) 55%, transparent);
-            }
-            :where(.dark) div.bg-yellow-400\\/20 {
-                background-color: color-mix(in oklab, var(--color-amber-400) 22%, transparent);
-            }
-        }
-    
-        .improved-logbar-theme-switch {
-            width: 2rem;
-            height: 2rem;
-            border: 1px solid var(--border);
-            border-radius: 9999px;
-            background: var(--card);
-            color: var(--foreground);
-            font-size: 1rem;
-            cursor: pointer;
-        }
-    `
-const LAYOUT_STYLE = `
-        :root {
-            --improved-logbar-bonus: #15803d;
-            --improved-logbar-missing: #612c2c;
-            --improved-logbar-in-progress: #cd9b2a;
-            --improved-logbar-expected-bar: #ffca0033;
-            --improved-logbar-expected-label: #4e2f08a1;
-            --improved-logbar-gap-capsule: #b45309;
-            --improved-logbar-public-holiday: #7c3aed;
-            --improved-logbar-closure: #0d9488;
-
-            --improved-logbar-day-border: #e4e4e7;
-            --improved-logbar-day-hover: #f4f4f5;
-            --improved-logbar-day-off-background: #dbeafe;
-            --improved-logbar-day-off-border: #93c5fd;
-            --improved-logbar-day-off-text: #1d4ed8;
-            --improved-logbar-past-day-border: #f4f4f5;
-            --improved-logbar-past-day-text: #a1a1aa;
-            --improved-logbar-past-day-off-background: #f4f4f5;
-        }
-        
-        .improved-logbar-summary { flex-wrap: wrap; }
-
-        .improved-logbar-expected-bar {
-            position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            top: 0;
-            height: 100%;
-            border-radius: 9999px;
-            background: var(--improved-logbar-expected-bar);
-            transition: width 150ms cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .improved-logbar-expected-bar-label { margin-right: 10px; z-index: 10; font-size: 0.9rem; color: var(--improved-logbar-expected-label); }
-
-        .improved-logbar-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; gap: 0.5rem; }
-        .improved-logbar-gap-days {  }
-        .improved-logbar-gap-capsule { color: var(--improved-logbar-gap-capsule); }
-        
-        .improved-logbar-bonus { color: var(--improved-logbar-bonus); }
-        .improved-logbar-missing { color: var(--improved-logbar-missing); }
-        .improved-logbar-in-progress { color: var(--improved-logbar-in-progress); }
-        
-        .improved-logbar-settings {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            padding: 0.75rem 0.5rem;
-            font-size: 0.875rem;
-            color: var(--sidebar-foreground);
-        }
-        [data-collapsible="icon"] .improved-logbar-settings { display: none; }
-        .improved-logbar-settings-section { display: flex; flex-direction: column; gap: 0.5rem; }
-        .improved-logbar-settings-title { font-size: 0.75rem; font-weight: 500; color: var(--muted-foreground); }
-        .improved-logbar-settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-        .improved-logbar-settings-row input {
-            width: 4rem;
-            padding: 0.125rem 0.375rem;
-            border: 1px solid var(--input);
-            border-radius: 0.375rem;
-            background: transparent;
-            color: inherit;
-        }
-
-        .improved-logbar-credit { font-size: 0.75rem; color: var(--muted-foreground); }
-        .improved-logbar-credit:hover { text-decoration: underline; }
-
-        @media (min-width: 768px) {
-            .improved-logbar-summary { flex-wrap: nowrap; }
-            .improved-logbar-gap-container { flex-basis: auto; margin-bottom: 0; }
-        }
-    `
 
 // TYPES
 interface AttendanceCalendar {
@@ -294,65 +68,8 @@ interface MonthPlanData {
     lastSync?: CapsuleSync | null
 }
 
-interface Labels {
-    /** from Monday */
-    WEEKDAYS: string[]
-    THEME: string
-    DAYS_OFF: string
-    HOURS_PER_REMAINING_DAY: string
-    EXPECTED: (time: string) => string
-    BONUS_DAYS: (days: number) => string
-    MISSING_DAYS: (days: number) => string
-    REMAINING_TODAY: (time: string) => string
-    CAPSULES_TO_USE: string
-    CAPSULES_LEFT: (count: number) => string
-    PUBLIC_HOLIDAY: string
-    CLOSURE: string
-    GAP_UNAVAILABLE: string
-    ERROR_WORKDAYS_MISSING: string
-    ERROR_DATA_UNAVAILABLE: (status: number) => string
-    ERROR_SESSION_EXPIRED: string
-    ERROR_SUMMARY_NOT_FOUND: string
-    ERROR_PROGRESS_BAR_NOT_FOUND: string
-    ERROR_LOGGED_MONTH_NOT_FOUND: string
-    ERROR_MONTH_GOAL_NOT_FOUND: string
-    WARNING_LOGGED_TODAY_NOT_FOUND: string
-}
-
 
 // HELPERS
-/**
- * @returns the labels in lang, or in English when lang has none
- */
-function getLabels(lang: string): Labels {
-    return LABELS[lang] ?? LABELS.en
-}
-
-/**
- * @param text - a duration such as "26:33"
- */
-function parseMinutes(text: string): number {
-    let [hours, minutes] = text.split(":").map((x) => parseInt(x))
-    return hours * 60 + minutes
-}
-
-/**
- * @returns the duration as HH:MM, with a minus sign when negative
- */
-function formatMinutes(minutes: number): string {
-    const sign = minutes < 0 ? "-" : ""
-    const absoluteMinutes = Math.abs(minutes)
-    return `${sign}${String(Math.floor(absoluteMinutes / 60)).padStart(2, '0')}:${String(absoluteMinutes % 60).padStart(2, '0')}`
-}
-
-/**
- * @param year
- * @param monthIndex - 0 for January
- */
-function getDaysInMonth(year: number, monthIndex: number): number {
-    return new Date(year, monthIndex + 1, 0).getDate()
-}
-
 /**
  * @returns the text of the element, and whether the element exists
  */
@@ -362,78 +79,6 @@ function getTimeText(selector: string): [string, boolean] {
         return ["00:00", false]
     }
     return [element.textContent, true]
-}
-
-/**
- * Decodes the devalue format of SvelteKit: each value refers to the others by their index.
- */
-function decodeDevalue(values: unknown[]): any {
-    const specials = new Map([[-1, undefined], [-3, NaN], [-4, Infinity], [-5, -Infinity], [-6, -0]])
-    const decoded = new Map<number, any>()
-
-    function read(index: number): any {
-        if (index < 0) return specials.get(index)
-        if (decoded.has(index)) return decoded.get(index)
-
-        const value = values[index]
-        if (value === null || typeof value !== "object") {
-            decoded.set(index, value)
-            return value
-        }
-
-        if (!Array.isArray(value)) {
-            const object: Record<string, any> = {}
-            decoded.set(index, object)
-            for (const key in value) object[key] = read((value as Record<string, number>)[key])
-            return object
-        }
-
-        if (typeof value[0] !== "string") {
-            const array: any[] = []
-            decoded.set(index, array)
-            value.forEach((item, position) => { if (item !== -2) array[position] = read(item) })
-            return array
-        }
-
-        const [type, ...fields] = value
-        let result: any
-        switch (type) {
-            case "Date": result = new Date(fields[0]); break
-            case "BigInt": result = BigInt(fields[0]); break
-            case "RegExp": result = new RegExp(fields[0], fields[1]); break
-            case "Set": result = new Set(); decoded.set(index, result); fields.forEach((item) => result.add(read(item))); return result
-            case "Map": result = new Map(); decoded.set(index, result); for (let i = 0; i < fields.length; i += 2) result.set(read(fields[i]), read(fields[i + 1])); return result
-            case "null": result = Object.create(null); decoded.set(index, result); for (let i = 0; i < fields.length; i += 2) result[fields[i]] = read(fields[i + 1]); return result
-            default: result = read(fields[0])
-        }
-        decoded.set(index, result)
-        return result
-    }
-
-    return read(0)
-}
-
-/**
- * @returns whether the dark theme was chosen, or else whether the system uses one
- */
-function isDarkThemeChosen(): boolean {
-    try {
-        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-        if (savedTheme !== null) {
-            return savedTheme === "dark"
-        }
-    } catch {
-        // The storage can be unavailable, for example in a private window.
-    }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-}
-
-function saveThemeChoice(isDark: boolean): void {
-    try {
-        localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light")
-    } catch {
-        // Without storage, the choice lasts until the page is reloaded.
-    }
 }
 
 
@@ -1311,9 +956,11 @@ class CalendarWidget extends HTMLElement {
 customElements.define('improved-logbar-calendar', CalendarWidget)
 
 
-// noinspection JSUnusedGlobalSymbols
-interface HTMLElementTagNameMap {
-    "improved-logbar-calendar": CalendarWidget
+declare global {
+    // noinspection JSUnusedGlobalSymbols
+    interface HTMLElementTagNameMap {
+        "improved-logbar-calendar": CalendarWidget
+    }
 }
 
 
