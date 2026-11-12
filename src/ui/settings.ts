@@ -51,7 +51,7 @@ export class Settings {
     /**
      * The plan settings of the month shown, replaced when the month changes.
      */
-    planSectionElement: HTMLElement | null
+    settingsContainerElement: HTMLElement | null
 
     constructor({ lang, labels, themeSwitchElement }: SettingsOptions) {
         this.lang = lang
@@ -62,7 +62,7 @@ export class Settings {
         this.element.className = "improved-logbar-settings"
 
         this.capsulesInputElement = null
-        this.planSectionElement = null
+        this.settingsContainerElement = null
     }
 
     /**
@@ -94,11 +94,11 @@ export class Settings {
      * Replaces the plan settings with the days off, the planned hours and, in the current month, the planned capsules of plan, and calls onChange after each change.
      */
     render({ plan, attendance, onChange }: SettingsRenderOptions): void {
-        this.planSectionElement?.remove()
+        this.settingsContainerElement?.remove()
         this.capsulesInputElement = null
 
-        const sectionElement = document.createElement("div")
-        sectionElement.className = "improved-logbar-settings-section"
+        const settingsContainerElement = document.createElement("div")
+        settingsContainerElement.className = "improved-logbar-settings-container"
 
         const titleElement = document.createElement("span")
         titleElement.className = "improved-logbar-settings-title"
@@ -106,7 +106,7 @@ export class Settings {
 
         const calendarElement = document.createElement("improved-logbar-calendar")
         calendarElement.lang = this.lang
-        calendarElement.setPlan(plan, attendance.getDayMarks())
+        calendarElement.render(plan, attendance.getDayMarks())
 
         const hoursRowElement = document.createElement("label")
         hoursRowElement.className = "improved-logbar-settings-row"
@@ -131,7 +131,7 @@ export class Settings {
             onChange()
         })
 
-        sectionElement.append(titleElement, calendarElement, hoursRowElement)
+        settingsContainerElement.append(titleElement, calendarElement, hoursRowElement)
 
         if (plan.isCurrentMonth()) {
             const capsulesRowElement = document.createElement("label")
@@ -157,11 +157,11 @@ export class Settings {
                 onChange()
             })
 
-            sectionElement.append(capsulesRowElement)
+            settingsContainerElement.append(capsulesRowElement)
         }
 
-        this.planSectionElement = sectionElement
-        this.element.prepend(sectionElement)
+        this.settingsContainerElement = settingsContainerElement
+        this.element.prepend(settingsContainerElement)
     }
 
     /**

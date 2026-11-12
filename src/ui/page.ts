@@ -114,31 +114,31 @@ export class Page {
      */
     private renderExpectedBar(plan: MonthPlan, time: PageTime): void {
         const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
-        let expectedProgressBarElement = this.progressTrackElement.querySelector<HTMLElement>(".improved-logbar-expected-bar")
+        let expectedBarElement = this.progressTrackElement.querySelector<HTMLElement>(".improved-logbar-expected-bar")
 
         const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
         if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes) || expectedMinutes <= loggedTotalMinutes) {
-            expectedProgressBarElement?.remove()
+            expectedBarElement?.remove()
             return
         }
 
-        if (!expectedProgressBarElement) {
-            expectedProgressBarElement = document.createElement("div")
-            expectedProgressBarElement.classList.add("improved-logbar-expected-bar")
-            expectedProgressBarElement.style.width = `0%`
-            this.progressTrackElement.appendChild(expectedProgressBarElement)
+        if (!expectedBarElement) {
+            expectedBarElement = document.createElement("div")
+            expectedBarElement.classList.add("improved-logbar-expected-bar")
+            expectedBarElement.style.width = `0%`
+            this.progressTrackElement.appendChild(expectedBarElement)
         }
 
-        let expectedProgressBarLabelElement = this.progressTrackElement.querySelector(".improved-logbar-expected-bar-label")
-        if (!expectedProgressBarLabelElement) {
-            expectedProgressBarLabelElement = document.createElement("span")
-            expectedProgressBarLabelElement.classList.add("improved-logbar-expected-bar-label")
-            expectedProgressBarElement.append(expectedProgressBarLabelElement)
+        let expectedBarLabelElement = this.progressTrackElement.querySelector(".improved-logbar-expected-bar-label")
+        if (!expectedBarLabelElement) {
+            expectedBarLabelElement = document.createElement("span")
+            expectedBarLabelElement.classList.add("improved-logbar-expected-bar-label")
+            expectedBarElement.append(expectedBarLabelElement)
         }
-        expectedProgressBarLabelElement.textContent = `${formatMinutes(expectedMinutes)}`
+        expectedBarLabelElement.textContent = `${formatMinutes(expectedMinutes)}`
 
         setTimeout(() => {
-            expectedProgressBarElement.style.width = `${expectedMinutes / time.monthGoalMinutes * 100}%`
+            expectedBarElement.style.width = `${expectedMinutes / time.monthGoalMinutes * 100}%`
         }, 30)
     }
 
@@ -180,29 +180,29 @@ export class Page {
             }
         }
 
-        const gapContainer = document.createElement("span")
-        gapContainer.className = "improved-logbar-gap-container"
-        this.summaryElement.prepend(gapContainer)
+        const gapContainerElement = document.createElement("span")
+        gapContainerElement.className = "improved-logbar-gap-container"
+        this.summaryElement.prepend(gapContainerElement)
 
-        const gapTimeLabelElement = document.createElement("strong")
-        gapTimeLabelElement.classList.add(gapDirection.className)
-        gapTimeLabelElement.title = this.labels.EXPECTED(formatMinutes(expectedMinutes))
-        gapTimeLabelElement.textContent = gapDirection.label
-        gapContainer.prepend(gapTimeLabelElement)
+        const gapTimeElement = document.createElement("strong")
+        gapTimeElement.classList.add(gapDirection.className)
+        gapTimeElement.title = this.labels.EXPECTED(formatMinutes(expectedMinutes))
+        gapTimeElement.textContent = gapDirection.label
+        gapContainerElement.prepend(gapTimeElement)
 
         if (plan.dailyMinutes > 0 && gapDirection.formatDays) {
-            const gapDaysLabelElement = document.createElement("span")
-            gapDaysLabelElement.className = "improved-logbar-gap-days"
-            gapDaysLabelElement.classList.add(gapDirection.className)
-            gapDaysLabelElement.textContent = `(${gapDirection.formatDays(gapDays)})`
-            gapContainer.append(gapDaysLabelElement)
+            const gapDaysElement = document.createElement("span")
+            gapDaysElement.className = "improved-logbar-gap-days"
+            gapDaysElement.classList.add(gapDirection.className)
+            gapDaysElement.textContent = `(${gapDirection.formatDays(gapDays)})`
+            gapContainerElement.append(gapDaysElement)
         }
 
         if (plan.isCurrentMonth() && plan.capsules > 0) {
-            const capsuleLabelElement = document.createElement("span")
-            capsuleLabelElement.className = "improved-logbar-gap-capsule"
-            capsuleLabelElement.textContent = `(${this.labels.CAPSULES_LEFT(plan.capsules)})`
-            gapContainer.append(capsuleLabelElement)
+            const gapCapsuleElement = document.createElement("span")
+            gapCapsuleElement.className = "improved-logbar-gap-capsule"
+            gapCapsuleElement.textContent = `(${this.labels.CAPSULES_LEFT(plan.capsules)})`
+            gapContainerElement.append(gapCapsuleElement)
         }
     }
 

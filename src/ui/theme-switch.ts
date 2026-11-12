@@ -75,9 +75,9 @@ export class ThemeSwitch {
      */
     private render(): void {
         const isDark = this.theme === "dark"
-        const root = document.documentElement
-        if (root.classList.contains("dark") !== isDark) {
-            root.classList.toggle("dark", isDark)
+        const rootElement = document.documentElement
+        if (rootElement.classList.contains("dark") !== isDark) {
+            rootElement.classList.toggle("dark", isDark)
         }
         this.switchElement.textContent = isDark ? "☀" : "☾"
         this.switchElement.setAttribute("aria-pressed", String(isDark))

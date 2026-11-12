@@ -70,9 +70,9 @@ async function showMonthGap({ settings, labels, isOutdated }: ShowMonthGapOption
 }
 
 async function main(): Promise<void> {
-    const style = document.createElement("style")
-    style.textContent = LAYOUT_STYLE + THEME_STYLE
-    document.head.append(style)
+    const styleElement = document.createElement("style")
+    styleElement.textContent = LAYOUT_STYLE + THEME_STYLE
+    document.head.append(styleElement)
 
     const lang = await loadLang()
     const labels = getLabels(lang)

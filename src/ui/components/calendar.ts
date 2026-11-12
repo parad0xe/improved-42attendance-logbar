@@ -6,7 +6,7 @@ import type { MonthPlan } from "../../models/month-plan"
 /**
  * Shows the days of a month plan and toggles its days off, then dispatches change.
  */
-class CalendarWidget extends HTMLElement {
+class CalendarElement extends HTMLElement {
     /**
      * The plan whose days off are shown.
      */
@@ -17,11 +17,11 @@ class CalendarWidget extends HTMLElement {
     dayMarks: Map<number, DayMark>
     shadow: ShadowRoot
     /**
-     * The grid of the days, created once the widget is in the page.
+     * The grid of the days, created once the calendar is in the page.
      */
-    calendarElement: Element | null
+    gridElement: Element | null
     /**
-     * The legend of the day marks, created once the widget is in the page.
+     * The legend of the day marks, created once the calendar is in the page.
      */
     legendElement: Element | null
 
@@ -30,7 +30,7 @@ class CalendarWidget extends HTMLElement {
         this.plan = null
         this.dayMarks = new Map()
         this.shadow = this.attachShadow({ mode: 'open' })
-        this.calendarElement = null
+        this.gridElement = null
         this.legendElement = null
     }
 
@@ -117,43 +117,44 @@ class CalendarWidget extends HTMLElement {
             <div class="calendar"></div>
             <div class="legend"></div>
         `
-        this.calendarElement = this.shadow.querySelector(".calendar")
+        this.gridElement = this.shadow.querySelector(".calendar")
         this.legendElement = this.shadow.querySelector(".legend")
-        this.render()
+        this.draw()
     }
 
     /**
+     * Shows the days of plan, with the public holidays and closures of the month.
      * @param plan
      * @param dayMarks - the public holidays and closures of the month, by day from 1
      */
-    setPlan(plan: MonthPlan, dayMarks: Map<number, DayMark>): void {
+    render(plan: MonthPlan, dayMarks: Map<number, DayMark>): void {
         this.plan = plan
         this.dayMarks = dayMarks
-        this.render()
+        this.draw()
     }
 
     /**
-     * Draws the month of the plan in weeks from Monday, then the legend of its day marks, in the lang of the widget.
+     * Draws the month of the plan in weeks from Monday, then the legend of its day marks, in the lang of the calendar.
      */
-    render(): void {
-        if (!this.plan || !this.calendarElement || !this.legendElement) { return }
+    private draw(): void {
+        if (!this.plan || !this.gridElement || !this.legendElement) { return }
 
-        this.calendarElement.replaceChildren()
+        this.gridElement.replaceChildren()
 
         for (const weekday of getLabels(this.lang).WEEKDAYS) {
             const weekdayElement = document.createElement("div")
             weekdayElement.classList.add("calendar-weekday")
             weekdayElement.textContent = weekday
-            this.calendarElement.append(weekdayElement)
+            this.gridElement.append(weekdayElement)
         }
 
         const firstWeekday = (new Date(this.plan.year, this.plan.monthIndex, 1).getDay() + 6) % 7
         for (let i = 0; i < firstWeekday; i++) {
-            this.calendarElement.append(document.createElement("div"))
+            this.gridElement.append(document.createElement("div"))
         }
 
         for (let day = 1; day <= getDaysInMonth(this.plan.year, this.plan.monthIndex); day++) {
-            this.calendarElement.append(this.renderDay(this.plan, day))
+            this.gridElement.append(this.createDayElement(this.plan, day))
         }
 
         this.legendElement.replaceChildren()
@@ -166,9 +167,9 @@ class CalendarWidget extends HTMLElement {
     }
 
     /**
-     * @returns the name of mark, in the lang of the widget
+     * @returns the name of mark, in the lang of the calendar
      */
-    getMarkLabel(mark: DayMark): string {
+    private getMarkLabel(mark: DayMark): string {
         const labels = getLabels(this.lang)
         return mark === "public-holiday" ? labels.PUBLIC_HOLIDAY : labels.CLOSURE
     }
@@ -178,7 +179,7 @@ class CalendarWidget extends HTMLElement {
      * @param plan
      * @param day - the day of the month, from 1
      */
-    renderDay(plan: MonthPlan, day: number): HTMLDivElement {
+    private createDayElement(plan: MonthPlan, day: number): HTMLDivElement {
         const dayElement = document.createElement("div")
         dayElement.classList.add("calendar-day")
         dayElement.classList.toggle("day-off", plan.daysOff.has(day))
@@ -204,11 +205,11 @@ class CalendarWidget extends HTMLElement {
         return dayElement
     }
 }
-customElements.define('improved-logbar-calendar', CalendarWidget)
+customElements.define('improved-logbar-calendar', CalendarElement)
 
 declare global {
     // noinspection JSUnusedGlobalSymbols
     interface HTMLElementTagNameMap {
-        "improved-logbar-calendar": CalendarWidget
+        "improved-logbar-calendar": CalendarElement
     }
 }

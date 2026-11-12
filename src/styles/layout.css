@@ -30,7 +30,7 @@
     color: var(--sidebar-foreground);
 }
 [data-collapsible="icon"] .improved-logbar-settings { display: none; }
-.improved-logbar-settings-section { display: flex; flex-direction: column; gap: 0.5rem; }
+.improved-logbar-settings-container { display: flex; flex-direction: column; gap: 0.5rem; }
 .improved-logbar-settings-title { font-size: 0.75rem; font-weight: 500; color: var(--muted-foreground); }
 .improved-logbar-settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .improved-logbar-settings-row input {
