@@ -34,6 +34,8 @@
             BONUS_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour" : "jours"} bonus`,
             MISSING_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour manquant" : "jours manquants"}`,
             REMAINING_TODAY: (time) => `reste ${time} aujourd'hui`,
+            CAPSULES_TO_USE: "Capsules à poser",
+            CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} à poser`,
 
             ERROR_WORKDAYS_MISSING: "les jours ouvrés du mois sont introuvables, la page a peut-être changé",
             ERROR_DATA_UNAVAILABLE: (status) => `impossible de charger les données d'attendance (HTTP ${status})`,
@@ -55,6 +57,8 @@
             BONUS_DAYS: (days) => `${days.toFixed(1)} bonus ${days < 2 ? "day" : "days"}`,
             MISSING_DAYS: (days) => `${days.toFixed(1)} missing ${days < 2 ? "day" : "days"}`,
             REMAINING_TODAY: (time) => `remaining ${time} today`,
+            CAPSULES_TO_USE: "Capsules to use",
+            CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} to use`,
 
             ERROR_WORKDAYS_MISSING: "the working days of the month are missing, the page may have changed",
             ERROR_DATA_UNAVAILABLE: (status) => `cannot load the attendance data (HTTP ${status})`,
@@ -127,6 +131,7 @@
             --improved-logbar-in-progress: #fbbf24;
             --improved-logbar-expected-bar: #facc1530;
             --improved-logbar-expected-label: #fde68ab3;
+            --improved-logbar-gap-capsule: #ca7016;
 
             --improved-logbar-day-border: oklch(100% 0 0 / 12%);
             --improved-logbar-day-hover: oklch(100% 0 0 / 6%);
@@ -189,6 +194,7 @@
             --improved-logbar-in-progress: #cd9b2a;
             --improved-logbar-expected-bar: #ffca0033;
             --improved-logbar-expected-label: #4e2f08a1;
+            --improved-logbar-gap-capsule: #b45309;
 
             --improved-logbar-day-border: #e4e4e7;
             --improved-logbar-day-hover: #f4f4f5;
@@ -215,8 +221,9 @@
         }
         .improved-logbar-expected-bar-label { margin-right: 10px; z-index: 10; font-size: 0.9rem; color: var(--improved-logbar-expected-label); }
 
-        .improved-logbar-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; }
-        .improved-logbar-gap-days { padding: 0 0.5rem; }
+        .improved-logbar-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; gap: 0.5rem; }
+        .improved-logbar-gap-days {  }
+        .improved-logbar-gap-capsule { color: var(--improved-logbar-gap-capsule); }
         
         .improved-logbar-bonus { color: var(--improved-logbar-bonus); }
         .improved-logbar-missing { color: var(--improved-logbar-missing); }
@@ -279,9 +286,17 @@
      */
 
     /**
+     * @typedef {Object} CapsuleSync
+     * @property {number} availableCapsules
+     * @property {number} monthGoalMinutes - the goal shown by the site
+     */
+
+    /**
      * @typedef {Object} MonthPlanData
      * @property {number[]} daysOff - the days of the month, from 1, with no planned time
      * @property {number} dailyMinutes - the time planned on each remaining day
+     * @property {number} [capsules] - the capsules planned to be used this month
+     * @property {CapsuleSync | null} [lastSync] - what the site showed at the last capsule sync
      */
 
     /**
@@ -294,6 +309,8 @@
      * @property {(days: number) => string} BONUS_DAYS
      * @property {(days: number) => string} MISSING_DAYS
      * @property {(time: string) => string} REMAINING_TODAY
+     * @property {string} CAPSULES_TO_USE
+     * @property {(count: number) => string} CAPSULES_LEFT
      * @property {string} GAP_UNAVAILABLE
      * @property {string} ERROR_WORKDAYS_MISSING
      * @property {(status: number) => string} ERROR_DATA_UNAVAILABLE
@@ -462,6 +479,12 @@
             this.history = {
                 closures: history?.closures ?? [],
             }
+
+            /**
+             * The capsules left to use, shared by every month.
+             * @type {number}
+             */
+            this.availableCapsules = Array.isArray(data.availableCapsules) ? data.availableCapsules.length : 0
         }
 
         /**
@@ -526,8 +549,10 @@
          * @param {number} monthIndex - 0 for January
          * @param {Set<number>} daysOff - the days of the month, from 1, with no planned time
          * @param {number} dailyMinutes - the time planned on each remaining day
+         * @param {number} capsules - the capsules planned to be used this month
+         * @param {CapsuleSync | null} lastSync - what the site showed at the last capsule sync
          */
-        constructor(year, monthIndex, daysOff, dailyMinutes) {
+        constructor(year, monthIndex, daysOff, dailyMinutes, capsules, lastSync) {
             /** @type {number} */
             this.year = year
             /** @type {number} */
@@ -536,6 +561,10 @@
             this.daysOff = daysOff
             /** @type {number} */
             this.dailyMinutes = dailyMinutes
+            /** @type {number} */
+            this.capsules = capsules
+            /** @type {CapsuleSync | null} */
+            this.lastSync = lastSync
         }
 
         /**
@@ -559,9 +588,12 @@
                 const savedPlan = localStorage.getItem(MonthPlan.storageKey(year, monthIndex))
                 if (savedPlan !== null) {
                     /** @type {MonthPlanData} */
-                    const { daysOff, dailyMinutes } = JSON.parse(savedPlan)
-                    if (Array.isArray(daysOff) && daysOff.every(Number.isInteger) && Number.isFinite(dailyMinutes) && dailyMinutes >= 0) {
-                        return new MonthPlan(year, monthIndex, new Set(daysOff), dailyMinutes)
+                    const { daysOff, dailyMinutes, capsules = 0, lastSync = null } = JSON.parse(savedPlan)
+                    const isValidSync = lastSync === null
+                        || (Number.isInteger(lastSync.availableCapsules) && Number.isFinite(lastSync.monthGoalMinutes))
+                    if (Array.isArray(daysOff) && daysOff.every(Number.isInteger) && Number.isFinite(dailyMinutes) && dailyMinutes >= 0
+                        && Number.isInteger(capsules) && capsules >= 0 && isValidSync) {
+                        return new MonthPlan(year, monthIndex, new Set(daysOff), dailyMinutes, capsules, lastSync)
                     }
                 }
             } catch {
@@ -575,7 +607,7 @@
                 }
             }
 
-            return new MonthPlan(year, monthIndex, daysOff, WORKDAY_MINUTES)
+            return new MonthPlan(year, monthIndex, daysOff, WORKDAY_MINUTES, 0, null)
         }
 
         /**
@@ -586,6 +618,8 @@
             const storedPlan = {
                 daysOff: [...this.daysOff],
                 dailyMinutes: this.dailyMinutes,
+                capsules: this.capsules,
+                lastSync: this.lastSync,
             }
 
             try {
@@ -632,23 +666,59 @@
         }
 
         /**
+         * @param {Date} [now]
+         * @returns {boolean}
+         */
+        isCurrentMonth(now = new Date()) {
+            return this.year === now.getFullYear() && this.monthIndex === now.getMonth()
+        }
+
+        /**
          * Reports whether time is planned on the day of now, in the month of the plan.
          * @param {Date} [now]
          * @returns {boolean}
          */
         isPlannedDay(now = new Date()) {
-            return this.year === now.getFullYear()
-                && this.monthIndex === now.getMonth()
-                && !this.daysOff.has(now.getDate())
+            return this.isCurrentMonth(now) && !this.daysOff.has(now.getDate())
         }
 
         /**
-         * @param {number} monthGoalMinutes
+         * The capsules count only in the current month, as the available capsules are shared by every month.
+         * @param {number} monthGoalMinutes - the goal shown by the site
+         * @param {Date} [now]
+         * @returns {number} the goal lowered by a workday for each planned capsule
+         */
+        getGoalMinutes(monthGoalMinutes, now = new Date()) {
+            if (!this.isCurrentMonth(now)) { return monthGoalMinutes }
+            return monthGoalMinutes - this.capsules * WORKDAY_MINUTES
+        }
+
+        /**
+         * Removes the capsules used since the last sync from the planned ones, and keeps at most availableCapsules.
+         * A capsule counts as used when the available capsules and the goal of the month both went down.
+         * @param {number} availableCapsules
+         * @param {number} monthGoalMinutes - the goal shown by the site
+         * @returns {void}
+         */
+        syncCapsules(availableCapsules, monthGoalMinutes) {
+            if (this.lastSync) {
+                const usedCapsules = Math.min(
+                    this.lastSync.availableCapsules - availableCapsules,
+                    Math.round((this.lastSync.monthGoalMinutes - monthGoalMinutes) / WORKDAY_MINUTES),
+                )
+                this.capsules -= Math.max(0, usedCapsules)
+            }
+            this.capsules = Math.max(0, Math.min(this.capsules, availableCapsules))
+            this.lastSync = { availableCapsules, monthGoalMinutes }
+        }
+
+        /**
+         * @param {number} monthGoalMinutes - the goal shown by the site
          * @param {Date} [now]
          * @returns {{ start: number, end: number }} the minutes to have logged at the start and at the end of the day of now
          */
         getExpectedRange(monthGoalMinutes, now = new Date()) {
-            const end = monthGoalMinutes - this.countRemainingDays(now) * this.dailyMinutes
+            const end = this.getGoalMinutes(monthGoalMinutes, now) - this.countRemainingDays(now) * this.dailyMinutes
             const start = this.isPlannedDay(now) ? end - this.dailyMinutes : end
             return { start, end }
         }
@@ -722,7 +792,7 @@
          * @returns {void}
          */
         update(plan, time) {
-            this.renderExpectedBar(plan.getExpectedMinutes(time.monthGoalMinutes), time)
+            this.renderExpectedBar(plan, time)
             this.renderGap(plan, time)
         }
 
@@ -739,16 +809,18 @@
 
         /**
          * Replaces the expected bar, shown only while the logged time is behind it.
-         * @param {number} expectedMinutes
+         * Its width follows the goal shown by the site, as the progress bar of the site does.
+         * @param {MonthPlan} plan
          * @param {PageTime} time
          * @returns {void}
          */
-        renderExpectedBar(expectedMinutes, time) {
+        renderExpectedBar(plan, time) {
+            const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
             let expectedProgressBarElement = this.progressTrackElement.querySelector(".improved-logbar-expected-bar")
             let barExists = expectedProgressBarElement !== null
 
             const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
-            if (time.loggedMonthMinutes >= time.monthGoalMinutes || expectedMinutes <= loggedTotalMinutes) {
+            if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes) || expectedMinutes <= loggedTotalMinutes) {
                 expectedProgressBarElement?.remove()
                 return
             }
@@ -784,7 +856,7 @@
         renderGap(plan, time) {
             this.summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
 
-            if (time.loggedMonthMinutes >= time.monthGoalMinutes) { return }
+            if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes)) { return }
 
             this.summaryElement.classList.add("improved-logbar-summary")
 
@@ -832,15 +904,28 @@
                 gapDaysLabelElement.textContent = `(${gapDirection.formatDays(gapDays)})`
                 gapContainer.append(gapDaysLabelElement)
             }
+
+            if (plan.isCurrentMonth() && plan.capsules > 0) {
+                const capsuleLabelElement = document.createElement("span")
+                capsuleLabelElement.className = "improved-logbar-gap-capsule"
+                capsuleLabelElement.textContent = `(${this.labels.CAPSULES_LEFT(plan.capsules)})`
+                gapContainer.append(capsuleLabelElement)
+            }
         }
 
         /**
          * Calls callback with the new time when one of the times changes, until an error occurs.
-         * @param {(time: PageTime) => void} callback
+         * @param {(time: PageTime) => void | Promise<void>} callback
          * @returns {void}
          */
         watch(callback) {
             let time = this.read()
+
+            const stop = (error) => {
+                observer.disconnect()
+                console.error(error)
+                renderError(error, this.labels)
+            }
 
             const observer = new MutationObserver(() => {
                 try {
@@ -848,11 +933,9 @@
                     if (Page.equal(newTime, time)) { return }
 
                     time = newTime
-                    callback(time)
+                    Promise.resolve(callback(time)).catch(stop)
                 } catch (error) {
-                    observer.disconnect()
-                    console.error(error)
-                    renderError(error, this.labels)
+                    stop(error)
                 }
             })
             observer.observe(document.querySelector(SELECTORS.main), { childList: true, subtree: true, characterData: true })
@@ -885,6 +968,12 @@
              */
             this.settingsElement = document.createElement("section")
             this.settingsElement.className = "improved-logbar-settings"
+
+            /**
+             * The input of the planned capsules, only in the current month.
+             * @type {HTMLInputElement | null}
+             */
+            this.capsulesInputElement = null
         }
 
         /**
@@ -960,12 +1049,13 @@
         }
 
         /**
-         * Adds the days off and the planned hours of plan, and redraws page after each change.
+         * Adds the days off, the planned hours and, in the current month, the planned capsules of plan, and redraws page after each change.
          * @param {MonthPlan} plan
          * @param {Page} page
+         * @param {number} availableCapsules
          * @returns {void}
          */
-        mountPlan(plan, page) {
+        mountPlan(plan, page, availableCapsules) {
             const sectionElement = document.createElement("div")
             sectionElement.className = "improved-logbar-settings-section"
 
@@ -1006,7 +1096,46 @@
             })
 
             sectionElement.append(titleElement, calendarElement, hoursRowElement)
+
+            if (plan.isCurrentMonth()) {
+                const capsulesRowElement = document.createElement("label")
+                capsulesRowElement.className = "improved-logbar-settings-row"
+                capsulesRowElement.textContent = this.labels.CAPSULES_TO_USE
+
+                this.capsulesInputElement = document.createElement("input")
+                this.capsulesInputElement.type = "number"
+                this.capsulesInputElement.min = "0"
+                this.capsulesInputElement.step = "1"
+                this.updateCapsules(plan, availableCapsules)
+                capsulesRowElement.append(this.capsulesInputElement)
+
+                this.capsulesInputElement.addEventListener("change", () => {
+                    const capsules = this.capsulesInputElement.valueAsNumber
+                    if (!Number.isInteger(capsules) || capsules < 0) {
+                        this.capsulesInputElement.value = String(plan.capsules)
+                        return
+                    }
+                    plan.capsules = Math.min(capsules, Number(this.capsulesInputElement.max))
+                    this.capsulesInputElement.value = String(plan.capsules)
+                    savePlan()
+                })
+
+                sectionElement.append(capsulesRowElement)
+            }
+
             this.settingsElement.prepend(sectionElement)
+        }
+
+        /**
+         * Shows the planned capsules of plan, at most availableCapsules.
+         * @param {MonthPlan} plan
+         * @param {number} availableCapsules
+         * @returns {void}
+         */
+        updateCapsules(plan, availableCapsules) {
+            if (!this.capsulesInputElement) { return }
+            this.capsulesInputElement.max = String(availableCapsules)
+            this.capsulesInputElement.value = String(plan.capsules)
         }
     }
 
@@ -1180,10 +1309,25 @@
         const plan = MonthPlan.load(attendance)
         const page = new Page(settings.labels)
 
-        page.update(plan, page.read())
-        page.watch((time) => page.update(plan, time))
+        const time = page.read()
+        if (plan.isCurrentMonth()) {
+            plan.syncCapsules(attendance.availableCapsules, time.monthGoalMinutes)
+            plan.save()
+        }
+        page.update(plan, time)
 
-        settings.mountPlan(plan, page)
+        page.watch(async (time) => {
+            // A capsule used on the site lowers the goal of the month.
+            if (plan.isCurrentMonth() && time.monthGoalMinutes !== plan.lastSync.monthGoalMinutes) {
+                const { availableCapsules } = await Attendance.fetch(settings.labels)
+                plan.syncCapsules(availableCapsules, time.monthGoalMinutes)
+                plan.save()
+                settings.updateCapsules(plan, availableCapsules)
+            }
+            page.update(plan, time)
+        })
+
+        settings.mountPlan(plan, page, attendance.availableCapsules)
     }
 
     /** @returns {Promise<void>} */
