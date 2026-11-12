@@ -33,6 +33,7 @@
             EXPECTED: (time) => `Prévu ${time}`,
             BONUS_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour" : "jours"} bonus`,
             MISSING_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour manquant" : "jours manquants"}`,
+            REMAINING_TODAY: (time) => `reste ${time} aujourd'hui`,
 
             ERROR_WORKDAYS_MISSING: "les jours ouvrés du mois sont introuvables, la page a peut-être changé",
             ERROR_DATA_UNAVAILABLE: (status) => `impossible de charger les données d'attendance (HTTP ${status})`,
@@ -53,6 +54,7 @@
             EXPECTED: (time) => `Expected ${time}`,
             BONUS_DAYS: (days) => `${days.toFixed(1)} bonus ${days < 2 ? "day" : "days"}`,
             MISSING_DAYS: (days) => `${days.toFixed(1)} missing ${days < 2 ? "day" : "days"}`,
+            REMAINING_TODAY: (time) => `remaining ${time} today`,
 
             ERROR_WORKDAYS_MISSING: "the working days of the month are missing, the page may have changed",
             ERROR_DATA_UNAVAILABLE: (status) => `cannot load the attendance data (HTTP ${status})`,
@@ -122,6 +124,7 @@
         
             --improved-logbar-bonus: #4ade80;
             --improved-logbar-missing: #f87171;
+            --improved-logbar-in-progress: #fbbf24;
             --improved-logbar-expected-bar: #facc1530;
             --improved-logbar-expected-label: #fde68ab3;
 
@@ -183,6 +186,7 @@
         :root {
             --improved-logbar-bonus: #15803d;
             --improved-logbar-missing: #612c2c;
+            --improved-logbar-in-progress: #cd9b2a;
             --improved-logbar-expected-bar: #ffca0033;
             --improved-logbar-expected-label: #4e2f08a1;
 
@@ -216,6 +220,7 @@
         
         .improved-logbar-bonus { color: var(--improved-logbar-bonus); }
         .improved-logbar-missing { color: var(--improved-logbar-missing); }
+        .improved-logbar-in-progress { color: var(--improved-logbar-in-progress); }
         
         .improved-logbar-settings {
             display: flex;
@@ -288,6 +293,7 @@
      * @property {(time: string) => string} EXPECTED
      * @property {(days: number) => string} BONUS_DAYS
      * @property {(days: number) => string} MISSING_DAYS
+     * @property {(time: string) => string} REMAINING_TODAY
      * @property {string} GAP_UNAVAILABLE
      * @property {string} ERROR_WORKDAYS_MISSING
      * @property {(status: number) => string} ERROR_DATA_UNAVAILABLE
@@ -602,11 +608,10 @@
         }
 
         /**
-         * @returns {number} the days after today that are not days off
+         * @param {Date} [now]
+         * @returns {number} the days after now that are not days off
          */
-        countRemainingDays() {
-            const now = new Date()
-
+        countRemainingDays(now = new Date()) {
             let remainingDays = 0
             for (let day = 1; day <= getDaysInMonth(this.year, this.monthIndex); day++) {
                 const date = new Date(this.year, this.monthIndex, day)
@@ -623,7 +628,29 @@
          * @returns {number} the minutes to have logged by today to reach the goal with the planned time
          */
         getExpectedMinutes(monthGoalMinutes) {
-            return monthGoalMinutes - this.countRemainingDays() * this.dailyMinutes
+            return this.getExpectedRange(monthGoalMinutes).end
+        }
+
+        /**
+         * Reports whether time is planned on the day of now, in the month of the plan.
+         * @param {Date} [now]
+         * @returns {boolean}
+         */
+        isPlannedDay(now = new Date()) {
+            return this.year === now.getFullYear()
+                && this.monthIndex === now.getMonth()
+                && !this.daysOff.has(now.getDate())
+        }
+
+        /**
+         * @param {number} monthGoalMinutes
+         * @param {Date} [now]
+         * @returns {{ start: number, end: number }} the minutes to have logged at the start and at the end of the day of now
+         */
+        getExpectedRange(monthGoalMinutes, now = new Date()) {
+            const end = monthGoalMinutes - this.countRemainingDays(now) * this.dailyMinutes
+            const start = this.isPlannedDay(now) ? end - this.dailyMinutes : end
+            return { start, end }
         }
     }
 
@@ -695,9 +722,8 @@
          * @returns {void}
          */
         update(plan, time) {
-            const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
-            this.renderExpectedBar(expectedMinutes, time)
-            this.renderGap(expectedMinutes, plan.dailyMinutes, time)
+            this.renderExpectedBar(plan.getExpectedMinutes(time.monthGoalMinutes), time)
+            this.renderGap(plan, time)
         }
 
         /**
@@ -750,29 +776,43 @@
 
         /**
          * Replaces the gap, shown only while the goal of the month is not reached.
-         * @param {number} expectedMinutes
-         * @param {number} dailyMinutes - the length of a day in the gap in days, hidden when 0
+         * Below the time expected at the start of today, the gap is the delay; below the time expected at the end of today, it is the time remaining today.
+         * @param {MonthPlan} plan
          * @param {PageTime} time
          * @returns {void}
          */
-        renderGap(expectedMinutes, dailyMinutes, time) {
+        renderGap(plan, time) {
             this.summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
 
             if (time.loggedMonthMinutes >= time.monthGoalMinutes) { return }
 
             this.summaryElement.classList.add("improved-logbar-summary")
 
+            const { start, end } = plan.getExpectedRange(time.monthGoalMinutes)
             const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
+            const expectedMinutes = loggedTotalMinutes < start ? start : end
             const gapMinutes = Math.abs(expectedMinutes - loggedTotalMinutes)
-            const gapDays = gapMinutes / dailyMinutes
-            const gapDirection = (expectedMinutes <= loggedTotalMinutes) ? {
-                formatDays: this.labels.BONUS_DAYS,
-                sign: "+",
-                className: "improved-logbar-bonus"
-            } : {
-                formatDays: this.labels.MISSING_DAYS,
-                sign: "-",
-                className: "improved-logbar-missing"
+            const gapDays = gapMinutes / plan.dailyMinutes
+
+            let gapDirection
+            if (loggedTotalMinutes < start) {
+                gapDirection = {
+                    label: `-${formatMinutes(gapMinutes)}`,
+                    className: "improved-logbar-missing",
+                    formatDays: this.labels.MISSING_DAYS,
+                }
+            } else if (loggedTotalMinutes < end) {
+                gapDirection = {
+                    label: this.labels.REMAINING_TODAY(formatMinutes(gapMinutes)),
+                    className: "improved-logbar-in-progress",
+                    formatDays: null,
+                }
+            } else {
+                gapDirection = {
+                    label: `+${formatMinutes(gapMinutes)}`,
+                    className: "improved-logbar-bonus",
+                    formatDays: this.labels.BONUS_DAYS,
+                }
             }
 
             const gapContainer = document.createElement("span")
@@ -782,10 +822,10 @@
             const gapTimeLabelElement = document.createElement("strong")
             gapTimeLabelElement.classList.add(gapDirection.className)
             gapTimeLabelElement.title = this.labels.EXPECTED(formatMinutes(expectedMinutes))
-            gapTimeLabelElement.textContent = `${gapDirection.sign}${formatMinutes(gapMinutes)}`
+            gapTimeLabelElement.textContent = gapDirection.label
             gapContainer.prepend(gapTimeLabelElement)
 
-            if (dailyMinutes > 0) {
+            if (plan.dailyMinutes > 0 && gapDirection.formatDays) {
                 const gapDaysLabelElement = document.createElement("span")
                 gapDaysLabelElement.className = "improved-logbar-gap-days"
                 gapDaysLabelElement.classList.add(gapDirection.className)
