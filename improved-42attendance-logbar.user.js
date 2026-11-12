@@ -36,6 +36,8 @@
             REMAINING_TODAY: (time) => `reste ${time} aujourd'hui`,
             CAPSULES_TO_USE: "Capsules à poser",
             CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} à poser`,
+            PUBLIC_HOLIDAY: "Jour férié",
+            CLOSURE: "Fermeture de l'école",
 
             ERROR_WORKDAYS_MISSING: "les jours ouvrés du mois sont introuvables, la page a peut-être changé",
             ERROR_DATA_UNAVAILABLE: (status) => `impossible de charger les données d'attendance (HTTP ${status})`,
@@ -59,6 +61,8 @@
             REMAINING_TODAY: (time) => `remaining ${time} today`,
             CAPSULES_TO_USE: "Capsules to use",
             CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} to use`,
+            PUBLIC_HOLIDAY: "Public holiday",
+            CLOSURE: "School closure",
 
             ERROR_WORKDAYS_MISSING: "the working days of the month are missing, the page may have changed",
             ERROR_DATA_UNAVAILABLE: (status) => `cannot load the attendance data (HTTP ${status})`,
@@ -132,6 +136,8 @@
             --improved-logbar-expected-bar: #facc1530;
             --improved-logbar-expected-label: #fde68ab3;
             --improved-logbar-gap-capsule: #ca7016;
+            --improved-logbar-public-holiday: #a78bfa;
+            --improved-logbar-closure: #2dd4bf;
 
             --improved-logbar-day-border: oklch(100% 0 0 / 12%);
             --improved-logbar-day-hover: oklch(100% 0 0 / 6%);
@@ -195,6 +201,8 @@
             --improved-logbar-expected-bar: #ffca0033;
             --improved-logbar-expected-label: #4e2f08a1;
             --improved-logbar-gap-capsule: #b45309;
+            --improved-logbar-public-holiday: #7c3aed;
+            --improved-logbar-closure: #0d9488;
 
             --improved-logbar-day-border: #e4e4e7;
             --improved-logbar-day-hover: #f4f4f5;
@@ -286,6 +294,10 @@
      */
 
     /**
+     * @typedef {"public-holiday" | "closure"} DayMark
+     */
+
+    /**
      * @typedef {Object} CapsuleSync
      * @property {number} availableCapsules
      * @property {number} monthGoalMinutes - the goal shown by the site
@@ -311,6 +323,8 @@
      * @property {(time: string) => string} REMAINING_TODAY
      * @property {string} CAPSULES_TO_USE
      * @property {(count: number) => string} CAPSULES_LEFT
+     * @property {string} PUBLIC_HOLIDAY
+     * @property {string} CLOSURE
      * @property {string} GAP_UNAVAILABLE
      * @property {string} ERROR_WORKDAYS_MISSING
      * @property {(status: number) => string} ERROR_DATA_UNAVAILABLE
@@ -509,13 +523,40 @@
         }
 
         /**
+         * @param {Date} date
+         * @returns {boolean} whether date is in the workdays of the month
+         */
+        isWorkday(date) {
+            return this.calendar.workdays.some((workday) => workday.toDateString() === date.toDateString())
+        }
+
+        /**
          * Reports whether time is expected on date: a workday when the campus is not closed.
          * @param {Date} date
          * @returns {boolean}
          */
         isOpenWorkday(date) {
-            const isWorkday = this.calendar.workdays.some((workday) => workday.toDateString() === date.toDateString())
-            return isWorkday && !this.isClosedDay(date)
+            return this.isWorkday(date) && !this.isClosedDay(date)
+        }
+
+        /**
+         * @returns {Map<number, DayMark>} the public holidays and the closed workdays of the month, by day from 1
+         */
+        getDayMarks() {
+            const { year, monthIndex } = this.calendar
+
+            const dayMarks = new Map()
+            for (let day = 1; day <= getDaysInMonth(year, monthIndex); day++) {
+                const date = new Date(year, monthIndex, day)
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                if (!isWeekend && !this.isWorkday(date)) {
+                    dayMarks.set(day, "public-holiday")
+                } else if (this.isWorkday(date) && this.isClosedDay(date)) {
+                    dayMarks.set(day, "closure")
+                }
+            }
+
+            return dayMarks
         }
 
         /**
@@ -1059,10 +1100,10 @@
          * Replaces the plan settings with the days off, the planned hours and, in the current month, the planned capsules of plan, and redraws page after each change.
          * @param {MonthPlan} plan
          * @param {Page} page
-         * @param {number} availableCapsules
+         * @param {Attendance} attendance - for the public holidays, the closures and the available capsules
          * @returns {void}
          */
-        mountPlan(plan, page, availableCapsules) {
+        mountPlan(plan, page, attendance) {
             this.planSectionElement?.remove()
             this.capsulesInputElement = null
 
@@ -1075,7 +1116,7 @@
 
             const calendarElement = document.createElement("improved-logbar-calendar")
             calendarElement.lang = this.lang
-            calendarElement.setPlan(plan)
+            calendarElement.setPlan(plan, attendance.getDayMarks())
 
             const hoursRowElement = document.createElement("label")
             hoursRowElement.className = "improved-logbar-settings-row"
@@ -1116,7 +1157,7 @@
                 this.capsulesInputElement.type = "number"
                 this.capsulesInputElement.min = "0"
                 this.capsulesInputElement.step = "1"
-                this.updateCapsules(plan, availableCapsules)
+                this.updateCapsules(plan, attendance.availableCapsules)
                 capsulesRowElement.append(this.capsulesInputElement)
 
                 this.capsulesInputElement.addEventListener("change", () => {
@@ -1164,6 +1205,11 @@
              * @type {MonthPlan | null}
              */
             this.plan = null
+            /**
+             * The public holidays and closures of the month, by day from 1.
+             * @type {Map<number, DayMark>}
+             */
+            this.dayMarks = new Map()
             /** @type {ShadowRoot} */
             this.shadow = this.attachShadow({ mode: 'open' })
             /**
@@ -1171,6 +1217,11 @@
              * @type {Element | null}
              */
             this.calendarElement = null
+            /**
+             * The legend of the day marks, created once the widget is in the page.
+             * @type {Element | null}
+             */
+            this.legendElement = null
         }
 
         /** @returns {void} */
@@ -1191,6 +1242,7 @@
                 }
 
                 .calendar-day {
+                    position: relative;
                     padding: 4px 0;
                     border: 1px solid var(--improved-logbar-day-border);
                     border-radius: 4px;
@@ -1221,25 +1273,58 @@
                     background: var(--improved-logbar-past-day-off-background);
                     font-weight: normal;
                 }
+
+                .calendar-day.public-holiday::after,
+                .calendar-day.closure::after,
+                .legend-mark::before {
+                    content: "";
+                    display: block;
+                    width: 4px;
+                    height: 4px;
+                    border-radius: 50%;
+                }
+                .calendar-day.public-holiday::after,
+                .calendar-day.closure::after {
+                    position: absolute;
+                    bottom: 2px;
+                    left: calc(50% - 2px);
+                }
+                .calendar-day.past::after { opacity: 0.5; }
+                .public-holiday::after, .legend-mark.public-holiday::before { background: var(--improved-logbar-public-holiday); }
+                .closure::after, .legend-mark.closure::before { background: var(--improved-logbar-closure); }
+
+                .legend {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.25rem 0.75rem;
+                    margin-top: 0.375rem;
+                    font-size: 0.625rem;
+                    color: var(--muted-foreground);
+                }
+                .legend-mark { display: flex; align-items: center; gap: 0.25rem; }
             </style>
 
             <div class="calendar"></div>
+            <div class="legend"></div>
         `
             this.calendarElement = this.shadow.querySelector(".calendar")
+            this.legendElement = this.shadow.querySelector(".legend")
             this.render()
         }
 
         /**
          * @param {MonthPlan} plan
+         * @param {Map<number, DayMark>} dayMarks - the public holidays and closures of the month, by day from 1
          * @returns {void}
          */
-        setPlan(plan) {
+        setPlan(plan, dayMarks) {
             this.plan = plan
+            this.dayMarks = dayMarks
             this.render()
         }
 
         /**
-         * Draws the month of the plan in weeks from Monday, with the weekdays in the lang of the widget.
+         * Draws the month of the plan in weeks from Monday, then the legend of its day marks, in the lang of the widget.
          * @returns {void}
          */
         render() {
@@ -1262,6 +1347,23 @@
             for (let day = 1; day <= getDaysInMonth(this.plan.year, this.plan.monthIndex); day++) {
                 this.calendarElement.append(this.renderDay(day))
             }
+
+            this.legendElement.replaceChildren()
+            for (const mark of new Set(this.dayMarks.values())) {
+                const markElement = document.createElement("span")
+                markElement.classList.add("legend-mark", mark)
+                markElement.textContent = this.getMarkLabel(mark)
+                this.legendElement.append(markElement)
+            }
+        }
+
+        /**
+         * @param {DayMark} mark
+         * @returns {string} the name of mark, in the lang of the widget
+         */
+        getMarkLabel(mark) {
+            const labels = getLabels(this.lang)
+            return mark === "public-holiday" ? labels.PUBLIC_HOLIDAY : labels.CLOSURE
         }
 
         /**
@@ -1274,6 +1376,12 @@
             dayElement.classList.add("calendar-day")
             dayElement.classList.toggle("day-off", this.plan.daysOff.has(day))
             dayElement.textContent = String(day)
+
+            const mark = this.dayMarks.get(day)
+            if (mark) {
+                dayElement.classList.add(mark)
+                dayElement.title = this.getMarkLabel(mark)
+            }
 
             const isPast = new Date(this.plan.year, this.plan.monthIndex, day) <= new Date()
             if (isPast) {
@@ -1358,7 +1466,7 @@
             page.update(plan, time)
         })
 
-        settings.mountPlan(plan, page, attendance.availableCapsules)
+        settings.mountPlan(plan, page, attendance)
         return stopWatching
     }
 
