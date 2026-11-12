@@ -2,24 +2,26 @@ import type { Labels } from "../labels"
 
 const THEME_STORAGE_KEY = "improved-logbar-theme"
 
+type Theme = "light" | "dark"
+
 /**
- * @returns whether the dark theme was chosen, or else whether the system uses one
+ * @returns the theme chosen, or else the theme of the system
  */
-function isDarkThemeChosen(): boolean {
+function loadTheme(): Theme {
     try {
         const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
         if (savedTheme !== null) {
-            return savedTheme === "dark"
+            return savedTheme === "dark" ? "dark" : "light"
         }
     } catch {
         // The storage can be unavailable, for example in a private window.
     }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
 
-function saveThemeChoice(isDark: boolean): void {
+function saveTheme(theme: Theme): void {
     try {
-        localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light")
+        localStorage.setItem(THEME_STORAGE_KEY, theme)
     } catch {
         // Without storage, the choice lasts until the page is reloaded.
     }
@@ -34,13 +36,13 @@ export class ThemeSwitch {
      */
     element: HTMLElement
     /**
-     * Whether the dark theme is chosen.
+     * The theme chosen.
      */
-    isDark: boolean
+    theme: Theme
     private switchElement: HTMLButtonElement
 
     constructor(labels: Labels) {
-        this.isDark = isDarkThemeChosen()
+        this.theme = loadTheme()
 
         this.element = document.createElement("div")
         this.element.className = "improved-logbar-settings-row"
@@ -53,8 +55,8 @@ export class ThemeSwitch {
         this.switchElement.setAttribute("aria-label", labels.THEME)
 
         this.switchElement.addEventListener("click", () => {
-            this.isDark = !this.isDark
-            saveThemeChoice(this.isDark)
+            this.theme = this.theme === "dark" ? "light" : "dark"
+            saveTheme(this.theme)
             this.render()
         })
         this.element.append(this.switchElement)
@@ -72,11 +74,12 @@ export class ThemeSwitch {
      * Applies the chosen theme to the page, and shows on the switch the theme it leads to.
      */
     private render(): void {
+        const isDark = this.theme === "dark"
         const root = document.documentElement
-        if (root.classList.contains("dark") !== this.isDark) {
-            root.classList.toggle("dark", this.isDark)
+        if (root.classList.contains("dark") !== isDark) {
+            root.classList.toggle("dark", isDark)
         }
-        this.switchElement.textContent = this.isDark ? "☀" : "☾"
-        this.switchElement.setAttribute("aria-pressed", String(this.isDark))
+        this.switchElement.textContent = isDark ? "☀" : "☾"
+        this.switchElement.setAttribute("aria-pressed", String(isDark))
     }
 }

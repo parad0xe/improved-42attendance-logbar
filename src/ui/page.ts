@@ -22,12 +22,18 @@ interface PageTime {
 /**
  * @returns the text of the element, and whether the element exists
  */
-function getTimeText(selector: string): [string, boolean] {
+function readTimeText(selector: string): [string, boolean] {
     const element = document.querySelector(selector)
     if (!element) {
         return ["00:00", false]
     }
     return [element.textContent, true]
+}
+
+function isSameTime(a: PageTime, b: PageTime): boolean {
+    return a.loggedMonthMinutes === b.loggedMonthMinutes
+        && a.monthGoalMinutes === b.monthGoalMinutes
+        && a.loggedTodayMinutes === b.loggedTodayMinutes
 }
 
 export class Page {
@@ -69,21 +75,21 @@ export class Page {
     }
 
     read(): PageTime {
-        let [loggedMonthText, loggedMonthTextOk] = getTimeText(SELECTORS.loggedMonth)
-        if (!loggedMonthTextOk) {
+        let [loggedMonthText, hasLoggedMonth] = readTimeText(SELECTORS.loggedMonth)
+        if (!hasLoggedMonth) {
             throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_LOGGED_MONTH_NOT_FOUND}`)
         }
 
-        let [monthGoalText, monthGoalTextOk] = getTimeText(SELECTORS.monthGoal)
-        if (!monthGoalTextOk) {
+        let [monthGoalText, hasMonthGoal] = readTimeText(SELECTORS.monthGoal)
+        if (!hasMonthGoal) {
             throw new Error(`${SCRIPT_NAME}: ${this.labels.ERROR_MONTH_GOAL_NOT_FOUND}`)
         }
 
-        let timerStarted = document.querySelectorAll(SELECTORS.timerParts).length === 2
-        let [loggedTodayText, loggedTodayTextOk] = timerStarted
-            ? getTimeText(SELECTORS.loggedToday)
+        let isTimerStarted = document.querySelectorAll(SELECTORS.timerParts).length === 2
+        let [loggedTodayText, hasLoggedToday] = isTimerStarted
+            ? readTimeText(SELECTORS.loggedToday)
             : ["00:00", true]
-        if (!loggedTodayTextOk) {
+        if (!hasLoggedToday) {
             console.warn(`${SCRIPT_NAME}: ${this.labels.WARNING_LOGGED_TODAY_NOT_FOUND}`)
         }
 
@@ -100,12 +106,6 @@ export class Page {
     render(plan: MonthPlan, time: PageTime): void {
         this.renderExpectedBar(plan, time)
         this.renderGap(plan, time)
-    }
-
-    private static equal(a: PageTime, b: PageTime): boolean {
-        return a.loggedMonthMinutes === b.loggedMonthMinutes
-            && a.monthGoalMinutes === b.monthGoalMinutes
-            && a.loggedTodayMinutes === b.loggedTodayMinutes
     }
 
     /**
@@ -222,7 +222,7 @@ export class Page {
         const observer = new MutationObserver(() => {
             try {
                 const newTime = this.read()
-                if (Page.equal(newTime, time)) { return }
+                if (isSameTime(newTime, time)) { return }
 
                 time = newTime
                 Promise.resolve(callback(time)).catch(stop)

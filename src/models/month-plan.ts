@@ -55,7 +55,7 @@ export class MonthPlan {
     /**
      * @returns the storage key of the plan of this month
      */
-    static storageKey(year: number, monthIndex: number): string {
+    static getStorageKey(year: number, monthIndex: number): string {
         return `${PLAN_STORAGE_KEY}-${year}-${String(monthIndex + 1).padStart(2, '0')}`
     }
 
@@ -66,7 +66,7 @@ export class MonthPlan {
         const { year, monthIndex } = attendance.calendar
 
         try {
-            const savedPlan = localStorage.getItem(MonthPlan.storageKey(year, monthIndex))
+            const savedPlan = localStorage.getItem(MonthPlan.getStorageKey(year, monthIndex))
             if (savedPlan !== null) {
                 const { daysOff, dailyMinutes, capsules = 0, lastSync = null }: MonthPlanData = JSON.parse(savedPlan)
                 const isValidSync = lastSync === null
@@ -99,7 +99,7 @@ export class MonthPlan {
         }
 
         try {
-            localStorage.setItem(MonthPlan.storageKey(this.year, this.monthIndex), JSON.stringify(storedPlan))
+            localStorage.setItem(MonthPlan.getStorageKey(this.year, this.monthIndex), JSON.stringify(storedPlan))
         } catch {
             // Without storage, the plan lasts until the page is reloaded.
         }
