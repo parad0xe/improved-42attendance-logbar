@@ -162,7 +162,7 @@ class CalendarElement extends HTMLElement {
     }
 
     /**
-     * Creates the element of `day`, which toggles the day off when it is after today.
+     * Creates the element of `day`, which toggles the day off when it is today or later.
      * @param plan - the plan of the month
      * @param day - the day of the month, from 1
      */
@@ -178,7 +178,7 @@ class CalendarElement extends HTMLElement {
             dayElement.title = this.getMarkLabel(mark)
         }
 
-        const isPast = new Date(plan.year, plan.monthIndex, day) <= new Date()
+        const isPast = new Date(plan.year, plan.monthIndex, day).getTime() < new Date().setHours(0, 0, 0, 0)
         if (isPast) {
             dayElement.classList.add("past")
         } else {
