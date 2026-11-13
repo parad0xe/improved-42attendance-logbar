@@ -56,15 +56,17 @@ export class Settings {
 
     /** Adds the block to the bottom of the sidebar, and keeps it there. */
     mount(): void {
-        this.element.append(this.themeSwitchElement)
-
         const creditElement = document.createElement("a")
         creditElement.className = "improved-attendance-credit"
         creditElement.href = "https://github.com/parad0xe"
         creditElement.target = "_blank"
         creditElement.rel = "noopener noreferrer"
         creditElement.textContent = "@nlallema"
-        this.element.append(creditElement)
+
+        const footerContainerElement = document.createElement("div")
+        footerContainerElement.className = "improved-attendance-footer-container"
+        footerContainerElement.append(this.themeSwitchElement, creditElement)
+        this.element.append(footerContainerElement)
 
         // The sidebar content can be rendered again, for example when the mobile sidebar opens.
         const attach = () => {
@@ -85,13 +87,21 @@ export class Settings {
         const settingsContainerElement = document.createElement("div")
         settingsContainerElement.className = "improved-attendance-settings-container"
 
-        const titleElement = document.createElement("span")
-        titleElement.className = "improved-attendance-settings-title"
-        titleElement.textContent = this.labels.SETTINGS_DAYS_OFF
+        const daysOffTitleElement = document.createElement("span")
+        daysOffTitleElement.className = "improved-attendance-settings-title"
+        daysOffTitleElement.textContent = this.labels.SETTINGS_DAYS_OFF
 
         const calendarElement = document.createElement("improved-attendance-calendar")
         calendarElement.lang = this.lang
         calendarElement.render(plan, attendance.getDayMarks())
+
+        const daysOffContainerElement = document.createElement("div")
+        daysOffContainerElement.className = "improved-attendance-days-off-container"
+        daysOffContainerElement.append(daysOffTitleElement, calendarElement)
+
+        const paceTitleElement = document.createElement("span")
+        paceTitleElement.className = "improved-attendance-settings-title"
+        paceTitleElement.textContent = this.labels.SETTINGS_PACE
 
         const dailyTimeRowElement = document.createElement("label")
         dailyTimeRowElement.className = "improved-attendance-settings-row"
@@ -125,6 +135,14 @@ export class Settings {
         neededDailyTimeElement.className = "improved-attendance-needed-daily-time"
         this.neededDailyTimeElement = neededDailyTimeElement
 
+        const dailyTimeFieldElement = document.createElement("div")
+        dailyTimeFieldElement.className = "improved-attendance-settings-field"
+        dailyTimeFieldElement.append(dailyTimeRowElement, neededDailyTimeElement)
+
+        const paceContainerElement = document.createElement("div")
+        paceContainerElement.className = "improved-attendance-pace-container"
+        paceContainerElement.append(paceTitleElement, dailyTimeFieldElement)
+
         calendarElement.addEventListener("change", onChange)
         const onDailyTimeChange = () => {
             const hours = hoursInputElement.valueAsNumber
@@ -140,7 +158,7 @@ export class Settings {
         hoursInputElement.addEventListener("change", onDailyTimeChange)
         minutesInputElement.addEventListener("change", onDailyTimeChange)
 
-        settingsContainerElement.append(titleElement, calendarElement, dailyTimeRowElement, neededDailyTimeElement)
+        settingsContainerElement.append(daysOffContainerElement, paceContainerElement)
 
         if (plan.isCurrentMonth()) {
             const capsulesRowElement = document.createElement("label")
@@ -166,7 +184,7 @@ export class Settings {
                 onChange()
             })
 
-            settingsContainerElement.append(capsulesRowElement)
+            paceContainerElement.append(capsulesRowElement)
         }
 
         this.settingsContainerElement = settingsContainerElement
