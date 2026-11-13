@@ -26,6 +26,7 @@ export interface Labels {
     ERROR_LOGGED_MONTH_NOT_FOUND: string
     ERROR_MONTH_GOAL_NOT_FOUND: string
     WARNING_RUNNING_SESSION_NOT_FOUND: string
+    WARNING_LOGGED_TODAY_NOT_FOUND: string
 }
 
 const LABELS: Record<string, Labels> = {
@@ -54,6 +55,7 @@ const LABELS: Record<string, Labels> = {
         ERROR_LOGGED_MONTH_NOT_FOUND: "impossible de trouver le temps logué du mois, la mise en page a peut-être changé",
         ERROR_MONTH_GOAL_NOT_FOUND: "impossible de trouver l'objectif du mois, la mise en page a peut-être changé",
         WARNING_RUNNING_SESSION_NOT_FOUND: "impossible de trouver la session en cours",
+        WARNING_LOGGED_TODAY_NOT_FOUND: "impossible de trouver le temps logué aujourd'hui",
     },
     en: {
         SETTINGS_THEME: "Theme",
@@ -80,6 +82,7 @@ const LABELS: Record<string, Labels> = {
         ERROR_LOGGED_MONTH_NOT_FOUND: "cannot find the logged time of the month, the page layout may have changed",
         ERROR_MONTH_GOAL_NOT_FOUND: "cannot find the goal of the month, the page layout may have changed",
         WARNING_RUNNING_SESSION_NOT_FOUND: "cannot find the running session",
+        WARNING_LOGGED_TODAY_NOT_FOUND: "cannot find the time logged today",
     },
 }
 

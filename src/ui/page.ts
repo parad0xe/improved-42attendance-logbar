@@ -11,7 +11,7 @@ const SELECTORS = {
     monthGoal: "[data-slot='sidebar-inset'] main div:nth-of-type(2) > div div:nth-of-type(2) span:nth-of-type(3)",
     timerParts: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div > span",
     runningSession: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(1)",
-    loggedToday: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(2)",
+    loggedToday: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:last-of-type",
 }
 
 /**
@@ -72,26 +72,33 @@ export class Page {
     }
 
     read(): MonthTime {
-        let [loggedMonthText, hasLoggedMonth] = readTimeText(SELECTORS.loggedMonth)
+        const [loggedMonthText, hasLoggedMonth] = readTimeText(SELECTORS.loggedMonth)
         if (!hasLoggedMonth) {
             throw new Error(`${EXTENSION_NAME}: ${this.labels.ERROR_LOGGED_MONTH_NOT_FOUND}`)
         }
 
-        let [monthGoalText, hasMonthGoal] = readTimeText(SELECTORS.monthGoal)
+        const [monthGoalText, hasMonthGoal] = readTimeText(SELECTORS.monthGoal)
         if (!hasMonthGoal) {
             throw new Error(`${EXTENSION_NAME}: ${this.labels.ERROR_MONTH_GOAL_NOT_FOUND}`)
         }
 
-        let isTimerStarted = document.querySelectorAll(SELECTORS.timerParts).length === 2
-        let [runningSessionText, hasRunningSession] = isTimerStarted
+        const timerParts = document.querySelectorAll(SELECTORS.timerParts)
+        const isTimerStarted = timerParts.length === 2
+        const isLoggedToday = timerParts.length >= 1
+
+        const [runningSessionText, hasRunningSession] = isTimerStarted
             ? readTimeText(SELECTORS.runningSession)
             : ["00:00", true]
         if (!hasRunningSession) {
             console.warn(`${EXTENSION_NAME}: ${this.labels.WARNING_RUNNING_SESSION_NOT_FOUND}`)
         }
 
-        // Without any log today, the site shows no time for today.
-        let [loggedTodayText] = readTimeText(SELECTORS.loggedToday)
+        const [loggedTodayText, hasLoggedToday] = isLoggedToday
+            ? readTimeText(SELECTORS.loggedToday)
+            : ["00:00", true]
+        if (!hasLoggedToday) {
+            console.warn(`${EXTENSION_NAME}: ${this.labels.WARNING_LOGGED_TODAY_NOT_FOUND}`)
+        }
 
         return {
             loggedMonthMinutes: parseMinutes(loggedMonthText),
