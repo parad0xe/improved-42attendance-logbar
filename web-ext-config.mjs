@@ -1,7 +1,7 @@
 export default {
     ignoreFiles: [
-        "src/**",
-        "resources/**",
+        "src",
+        "resources",
         "build.mjs",
         "web-ext-config.mjs",
         "tsconfig.json",
