@@ -1,10 +1,8 @@
 {
 	"name": "improved-42attendance-logbar",
-	"version": "1.0.0",
 	"private": true,
 	"type": "module",
 	"description": "Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bonus or missing time compared with the time expected by today, based on your own days off, planned hours and capsules",
-	"main": "improved-42attendance-logbar.user.js",
 	"scripts": {
 		"build": "node build.mjs",
 		"dev": "node build.mjs --watch",
