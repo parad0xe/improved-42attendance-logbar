@@ -7,6 +7,10 @@ import { Page } from "./ui/page"
 import { Settings } from "./ui/settings"
 import { ThemeSwitch } from "./ui/theme-switch"
 
+const SELECTORS = {
+    routeAnnouncer: "#svelte-announcer",
+}
+
 interface StartMonthImprovementsOptions {
     /** The `Settings` object that renders the plan of the month. */
     settings: Settings
@@ -29,6 +33,26 @@ function watchUrl(onChange: () => void): void {
         search = location.search
         onChange()
     }).observe(document.body, { childList: true, subtree: true })
+}
+
+/** Resolves once Svelte has hydrated the page. */
+function waitForHydration(): Promise<void> {
+    // SvelteKit adds its route announcer once the page is hydrated.
+    const isHydrated = () => document.querySelector(SELECTORS.routeAnnouncer) !== null
+
+    return new Promise((resolve) => {
+        if (isHydrated()) {
+            resolve()
+            return
+        }
+
+        const observer = new MutationObserver(() => {
+            if (!isHydrated()) { return }
+            observer.disconnect()
+            resolve()
+        })
+        observer.observe(document.body, { childList: true, subtree: true })
+    })
 }
 
 /** Starts the improvements of the month in the URL, and returns a function that stops them. */
@@ -105,15 +129,17 @@ function main(): void {
                 Page.renderError(error, labels)
             })
             .finally(() => {
-                // Added to the sidebar before Svelte hydrates it, the settings would break its hydration.
+                // Mounted once, with the plan of the month.
                 if (isSettingsMounted) { return }
                 isSettingsMounted = true
                 settings.mount()
             })
     })
 
-    restartMonthImprovements()
-    watchUrl(restartMonthImprovements)
+    waitForHydration().then(() => {
+        restartMonthImprovements()
+        watchUrl(restartMonthImprovements)
+    })
 }
 
 main()
