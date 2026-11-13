@@ -2,6 +2,7 @@
 
 [![Latest release](https://img.shields.io/github/v/release/parad0xe/improved-attendance)](https://github.com/parad0xe/improved-attendance/releases/latest)
 [![License](https://img.shields.io/github/license/parad0xe/improved-attendance)](LICENSE)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/lbifhclehfgdpjdkpfpjilimhnnedain)](https://chromewebstore.google.com/detail/lbifhclehfgdpjdkpfpjilimhnnedain)
 
 Improves the [42 Lyon attendance page](https://attendance.42lyon.fr/me): plan your days off, time per day and capsules for the month, see the time needed each day to reach the goal, and follow your progress toward it, today and by the end of the month
 
@@ -39,9 +40,9 @@ The texts follow the language of the site, in French or English
 Install the extension from the store of your browser:
 
 - Firefox 128 or later: Firefox Add-ons, link to come
-- Chrome 111 or later: Chrome Web Store, link to come
+- Chrome 111 or later: [Chrome Web Store](https://chromewebstore.google.com/detail/lbifhclehfgdpjdkpfpjilimhnnedain)
 
-Until it is published, load it from the source, see [Development](#development)
+Until it is published on Firefox Add-ons, load it in Firefox from the source, see [Development](#development)
 
 ## Updates
 
