@@ -1,6 +1,6 @@
 # Improved 42 Attendance
 
-Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bonus or missing time compared with the time expected by today, based on your own days off, planned hours and capsules
+Improves the [42 Lyon attendance page](https://attendance.42lyon.fr/me): plan your days off, hours and capsules for the month, and follow your progress toward the goal, ahead of or behind the time expected by today
 
 ![The attendance page with the gap, the calendar of the days off and the settings, in the dark theme](resources/dark-attendance.png)
 

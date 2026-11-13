@@ -2,7 +2,7 @@
 	"name": "improved-attendance",
 	"private": true,
 	"type": "module",
-	"description": "Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bonus or missing time compared with the time expected by today, based on your own days off, planned hours and capsules",
+	"description": "Improves the 42 Lyon attendance page: plan your month and follow your progress toward the goal of the month",
 	"scripts": {
 		"build": "node build.mjs",
 		"dev": "node build.mjs --watch",
