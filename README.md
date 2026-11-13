@@ -1,8 +1,11 @@
 # Improved 42 Attendance
 
+[![Latest release](https://img.shields.io/github/v/release/parad0xe/improved-attendance)](https://github.com/parad0xe/improved-attendance/releases/latest)
+[![License](https://img.shields.io/github/license/parad0xe/improved-attendance)](LICENSE)
+
 Improves the [42 Lyon attendance page](https://attendance.42lyon.fr/me): plan your days off, hours and capsules for the month, and follow your progress toward the goal, ahead of or behind the time expected by today
 
-![The attendance page with the gap, the calendar of the days off and the settings, in the dark theme](resources/dark-attendance.png)
+![The attendance page with the gap, the calendar of the days off and the settings, in the dark theme](resources/screenshot.png)
 
 ## Features
 
