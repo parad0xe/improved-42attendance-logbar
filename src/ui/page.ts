@@ -1,7 +1,7 @@
 import { EXTENSION_NAME } from "../constants"
 import type { Labels } from "../labels"
 import { formatMinutes, parseMinutes } from "../lib/time"
-import type { MonthPlan } from "../models/month-plan"
+import type { MonthPlan, MonthTime } from "../models/month-plan"
 
 const SELECTORS = {
     main: "[data-slot='sidebar-inset'] main",
@@ -12,16 +12,6 @@ const SELECTORS = {
     timerParts: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div > span",
     runningSession: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(1)",
     loggedToday: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(2)",
-}
-
-interface PageTime {
-    /** The time logged in the month, without the running session, in minutes. */
-    loggedMonthMinutes: number
-    monthGoalMinutes: number
-    /** The time of the running session, in minutes. */
-    runningSessionMinutes: number
-    /** The time logged today, with the running session, in minutes. */
-    loggedTodayMinutes: number
 }
 
 /**
@@ -41,7 +31,7 @@ function readTimeText(selector: string): [string, boolean] {
  * @param a - the logged times and the time to log in the month, in minutes
  * @param b - the logged times and the time to log in the month, in minutes
  */
-function isSameTime(a: PageTime, b: PageTime): boolean {
+function isSameTime(a: MonthTime, b: MonthTime): boolean {
     return a.loggedMonthMinutes === b.loggedMonthMinutes
         && a.monthGoalMinutes === b.monthGoalMinutes
         && a.runningSessionMinutes === b.runningSessionMinutes
@@ -81,7 +71,7 @@ export class Page {
         this.progressTrackElement.querySelector("div")!.classList.add("relative", "z-[1]")
     }
 
-    read(): PageTime {
+    read(): MonthTime {
         let [loggedMonthText, hasLoggedMonth] = readTimeText(SELECTORS.loggedMonth)
         if (!hasLoggedMonth) {
             throw new Error(`${EXTENSION_NAME}: ${this.labels.ERROR_LOGGED_MONTH_NOT_FOUND}`)
@@ -116,7 +106,7 @@ export class Page {
      * @param plan - the plan of the month
      * @param time - the logged times and the time to log in the month, in minutes
      */
-    render(plan: MonthPlan, time: PageTime): void {
+    render(plan: MonthPlan, time: MonthTime): void {
         this.renderExpectedBar(plan, time)
         this.renderGap(plan, time)
     }
@@ -126,7 +116,7 @@ export class Page {
      * @param plan - the plan of the month
      * @param time - the logged times and the time to log in the month, in minutes
      */
-    private renderExpectedBar(plan: MonthPlan, time: PageTime): void {
+    private renderExpectedBar(plan: MonthPlan, time: MonthTime): void {
         const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
         let expectedBarElement = this.progressTrackElement.querySelector<HTMLElement>(".improved-attendance-expected-bar")
 
@@ -161,7 +151,7 @@ export class Page {
      * @param plan - the plan of the month
      * @param time - the logged times and the time to log in the month, in minutes
      */
-    private renderGap(plan: MonthPlan, time: PageTime): void {
+    private renderGap(plan: MonthPlan, time: MonthTime): void {
         this.summaryElement.querySelector(".improved-attendance-gap-container")?.remove()
 
         if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes)) { return }
@@ -225,7 +215,7 @@ export class Page {
      * Calls `onChange` with the new time each time it changes, and returns a function that stops watching.
      * @param onChange - called with the new logged times and time to log in the month
      */
-    watch(onChange: (time: PageTime) => void | Promise<void>): () => void {
+    watch(onChange: (time: MonthTime) => void | Promise<void>): () => void {
         let time = this.read()
 
         const stop = (error: unknown) => {

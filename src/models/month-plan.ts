@@ -32,6 +32,17 @@ interface MonthPlanOptions {
     lastSync: CapsuleSync | null
 }
 
+export interface MonthTime {
+    /** The time logged in the month, without the running session, in minutes. */
+    loggedMonthMinutes: number
+    /** The time to log in the month, in minutes. */
+    monthGoalMinutes: number
+    /** The time of the running session, in minutes. */
+    runningSessionMinutes: number
+    /** The time logged today, with the running session, in minutes. */
+    loggedTodayMinutes: number
+}
+
 export class MonthPlan {
     year: number
     monthIndex: number
