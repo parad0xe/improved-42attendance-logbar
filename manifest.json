@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Improved 42 Attendance",
   "version": "2.0.0",
-  "description": "Show the gap with the expected logged time",
+  "description": "Improves the 42 Lyon attendance page: plan your month and follow your progress toward the goal of the month",
   "icons": { "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "content_scripts": [
     {
