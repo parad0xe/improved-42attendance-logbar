@@ -2,7 +2,7 @@ import { WORKDAY_MINUTES } from "../constants"
 import { getDaysInMonth } from "../lib/time"
 import type { Attendance } from "./attendance"
 
-const PLAN_STORAGE_KEY = "improved-logbar-plan"
+const PLAN_STORAGE_KEY = "improved-attendance-plan"
 
 interface CapsuleSync {
     availableCapsules: number

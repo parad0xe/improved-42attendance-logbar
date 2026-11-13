@@ -1,6 +1,6 @@
 import type { Labels } from "../labels"
 
-const THEME_STORAGE_KEY = "improved-logbar-theme"
+const THEME_STORAGE_KEY = "improved-attendance-theme"
 
 type Theme = "light" | "dark"
 
@@ -44,12 +44,12 @@ export class ThemeSwitch {
         this.theme = loadTheme()
 
         this.element = document.createElement("div")
-        this.element.className = "improved-logbar-settings-row"
+        this.element.className = "improved-attendance-settings-row"
         this.element.textContent = labels.SETTINGS_THEME
 
         this.switchElement = document.createElement("button")
         this.switchElement.type = "button"
-        this.switchElement.className = "improved-logbar-theme-switch"
+        this.switchElement.className = "improved-attendance-theme-switch"
         this.switchElement.title = labels.SETTINGS_THEME
         this.switchElement.setAttribute("aria-label", labels.SETTINGS_THEME)
 

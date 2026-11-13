@@ -118,7 +118,7 @@ export class Page {
      */
     private renderExpectedBar(plan: MonthPlan, time: PageTime): void {
         const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
-        let expectedBarElement = this.progressTrackElement.querySelector<HTMLElement>(".improved-logbar-expected-bar")
+        let expectedBarElement = this.progressTrackElement.querySelector<HTMLElement>(".improved-attendance-expected-bar")
 
         const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
         if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes) || expectedMinutes <= loggedTotalMinutes) {
@@ -128,15 +128,15 @@ export class Page {
 
         if (!expectedBarElement) {
             expectedBarElement = document.createElement("div")
-            expectedBarElement.classList.add("improved-logbar-expected-bar")
+            expectedBarElement.classList.add("improved-attendance-expected-bar")
             expectedBarElement.style.width = `0%`
             this.progressTrackElement.appendChild(expectedBarElement)
         }
 
-        let expectedBarLabelElement = this.progressTrackElement.querySelector(".improved-logbar-expected-bar-label")
+        let expectedBarLabelElement = this.progressTrackElement.querySelector(".improved-attendance-expected-bar-label")
         if (!expectedBarLabelElement) {
             expectedBarLabelElement = document.createElement("span")
-            expectedBarLabelElement.classList.add("improved-logbar-expected-bar-label")
+            expectedBarLabelElement.classList.add("improved-attendance-expected-bar-label")
             expectedBarElement.append(expectedBarLabelElement)
         }
         expectedBarLabelElement.textContent = `${formatMinutes(expectedMinutes)}`
@@ -152,11 +152,11 @@ export class Page {
      * @param time - the logged times and the time to log in the month, in minutes
      */
     private renderGap(plan: MonthPlan, time: PageTime): void {
-        this.summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
+        this.summaryElement.querySelector(".improved-attendance-gap-container")?.remove()
 
         if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes)) { return }
 
-        this.summaryElement.classList.add("improved-logbar-summary")
+        this.summaryElement.classList.add("improved-attendance-summary")
 
         const { start, end } = plan.getExpectedRange(time.monthGoalMinutes)
         const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
@@ -168,25 +168,25 @@ export class Page {
         if (loggedTotalMinutes < start) {
             gapDirection = {
                 label: `-${formatMinutes(gapMinutes)}`,
-                className: "improved-logbar-missing",
+                className: "improved-attendance-missing",
                 formatDays: this.labels.GAP_MISSING_DAYS,
             }
         } else if (loggedTotalMinutes < end) {
             gapDirection = {
                 label: this.labels.GAP_REMAINING_TODAY(formatMinutes(gapMinutes)),
-                className: "improved-logbar-in-progress",
+                className: "improved-attendance-in-progress",
                 formatDays: null,
             }
         } else {
             gapDirection = {
                 label: `+${formatMinutes(gapMinutes)}`,
-                className: "improved-logbar-bonus",
+                className: "improved-attendance-bonus",
                 formatDays: this.labels.GAP_BONUS_DAYS,
             }
         }
 
         const gapContainerElement = document.createElement("span")
-        gapContainerElement.className = "improved-logbar-gap-container"
+        gapContainerElement.className = "improved-attendance-gap-container"
         this.summaryElement.prepend(gapContainerElement)
 
         const gapTimeElement = document.createElement("strong")
@@ -197,7 +197,7 @@ export class Page {
 
         if (plan.dailyMinutes > 0 && gapDirection.formatDays) {
             const gapDaysElement = document.createElement("span")
-            gapDaysElement.className = "improved-logbar-gap-days"
+            gapDaysElement.className = "improved-attendance-gap-days"
             gapDaysElement.classList.add(gapDirection.className)
             gapDaysElement.textContent = `(${gapDirection.formatDays(gapDays)})`
             gapContainerElement.append(gapDaysElement)
@@ -205,7 +205,7 @@ export class Page {
 
         if (plan.isCurrentMonth() && plan.capsules > 0) {
             const gapCapsuleElement = document.createElement("span")
-            gapCapsuleElement.className = "improved-logbar-gap-capsule"
+            gapCapsuleElement.className = "improved-attendance-gap-capsule"
             gapCapsuleElement.textContent = `(${this.labels.GAP_CAPSULES_LEFT(plan.capsules)})`
             gapContainerElement.append(gapCapsuleElement)
         }
@@ -247,10 +247,10 @@ export class Page {
     static renderError(error: unknown, labels: Labels): void {
         const summaryElement = document.querySelector(SELECTORS.summary)
         if (summaryElement) {
-            summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
+            summaryElement.querySelector(".improved-attendance-gap-container")?.remove()
 
             const errorElement = document.createElement("span")
-            errorElement.className = "improved-logbar-gap-container"
+            errorElement.className = "improved-attendance-gap-container"
             errorElement.title = error instanceof Error ? error.message : String(error)
             errorElement.textContent = labels.GAP_UNAVAILABLE
             summaryElement.prepend(errorElement)

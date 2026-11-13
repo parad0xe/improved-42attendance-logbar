@@ -44,7 +44,7 @@ export class Settings {
         this.themeSwitchElement = themeSwitchElement
 
         this.element = document.createElement("section")
-        this.element.className = "improved-logbar-settings"
+        this.element.className = "improved-attendance-settings"
 
         this.capsulesInputElement = null
         this.settingsContainerElement = null
@@ -55,7 +55,7 @@ export class Settings {
         this.element.append(this.themeSwitchElement)
 
         const creditElement = document.createElement("a")
-        creditElement.className = "improved-logbar-credit"
+        creditElement.className = "improved-attendance-credit"
         creditElement.href = "https://github.com/parad0xe"
         creditElement.target = "_blank"
         creditElement.rel = "noopener noreferrer"
@@ -79,18 +79,18 @@ export class Settings {
         this.capsulesInputElement = null
 
         const settingsContainerElement = document.createElement("div")
-        settingsContainerElement.className = "improved-logbar-settings-container"
+        settingsContainerElement.className = "improved-attendance-settings-container"
 
         const titleElement = document.createElement("span")
-        titleElement.className = "improved-logbar-settings-title"
+        titleElement.className = "improved-attendance-settings-title"
         titleElement.textContent = this.labels.SETTINGS_DAYS_OFF
 
-        const calendarElement = document.createElement("improved-logbar-calendar")
+        const calendarElement = document.createElement("improved-attendance-calendar")
         calendarElement.lang = this.lang
         calendarElement.render(plan, attendance.getDayMarks())
 
         const hoursRowElement = document.createElement("label")
-        hoursRowElement.className = "improved-logbar-settings-row"
+        hoursRowElement.className = "improved-attendance-settings-row"
         hoursRowElement.textContent = this.labels.SETTINGS_HOURS_PER_REMAINING_DAY
 
         const hoursInputElement = document.createElement("input")
@@ -116,7 +116,7 @@ export class Settings {
 
         if (plan.isCurrentMonth()) {
             const capsulesRowElement = document.createElement("label")
-            capsulesRowElement.className = "improved-logbar-settings-row"
+            capsulesRowElement.className = "improved-attendance-settings-row"
             capsulesRowElement.textContent = this.labels.SETTINGS_CAPSULES_TO_USE
 
             const capsulesInputElement = document.createElement("input")

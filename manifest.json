@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Improved 42Attendance Logbar",
+  "name": "Improved 42 Attendance",
   "version": "2026.11.17",
   "description": "Show the gap with the expected logged time",
   "icons": { "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
@@ -18,7 +18,7 @@
   "minimum_chrome_version": "111",
   "browser_specific_settings": {
     "gecko": {
-      "id": "improved-logbar@parad0xe",
+      "id": "improved-attendance@parad0xe",
       "strict_min_version": "128.0",
       "data_collection_permissions": { "required": ["none"] }
     }

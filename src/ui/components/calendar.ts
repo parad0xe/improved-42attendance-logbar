@@ -42,7 +42,7 @@ class CalendarElement extends HTMLElement {
                 .calendar-day {
                     position: relative;
                     padding: 4px 0;
-                    border: 1px solid var(--improved-logbar-day-border);
+                    border: 1px solid var(--improved-attendance-day-border);
                     border-radius: 4px;
                     text-align: center;
                     font-size: 0.75rem;
@@ -51,24 +51,24 @@ class CalendarElement extends HTMLElement {
                     transition: background-color 150ms, border-color 150ms;
                 }
                 .calendar-day:not(.past):not(.day-off):hover {
-                    background: var(--improved-logbar-day-hover);
+                    background: var(--improved-attendance-day-hover);
                 }
                 .calendar-day.day-off {
-                    background: var(--improved-logbar-day-off-background);
-                    border-color: var(--improved-logbar-day-off-border);
-                    color: var(--improved-logbar-day-off-text);
+                    background: var(--improved-attendance-day-off-background);
+                    border-color: var(--improved-attendance-day-off-border);
+                    color: var(--improved-attendance-day-off-text);
                     font-weight: 500;
                 }
                 .calendar-day.day-off:not(.past):hover {
-                    border-color: var(--improved-logbar-day-off-text);
+                    border-color: var(--improved-attendance-day-off-text);
                 }
                 .calendar-day.past {
-                    border-color: var(--improved-logbar-past-day-border);
-                    color: var(--improved-logbar-past-day-text);
+                    border-color: var(--improved-attendance-past-day-border);
+                    color: var(--improved-attendance-past-day-text);
                     cursor: default;
                 }
                 .calendar-day.past.day-off {
-                    background: var(--improved-logbar-past-day-off-background);
+                    background: var(--improved-attendance-past-day-off-background);
                     font-weight: normal;
                 }
 
@@ -88,8 +88,8 @@ class CalendarElement extends HTMLElement {
                     left: calc(50% - 2px);
                 }
                 .calendar-day.past::after { opacity: 0.5; }
-                .public-holiday::after, .legend-mark.public-holiday::before { background: var(--improved-logbar-public-holiday); }
-                .closure::after, .legend-mark.closure::before { background: var(--improved-logbar-closure); }
+                .public-holiday::after, .legend-mark.public-holiday::before { background: var(--improved-attendance-public-holiday); }
+                .closure::after, .legend-mark.closure::before { background: var(--improved-attendance-closure); }
 
                 .legend {
                     display: flex;
@@ -192,11 +192,11 @@ class CalendarElement extends HTMLElement {
         return dayElement
     }
 }
-customElements.define('improved-logbar-calendar', CalendarElement)
+customElements.define('improved-attendance-calendar', CalendarElement)
 
 declare global {
     // noinspection JSUnusedGlobalSymbols
     interface HTMLElementTagNameMap {
-        "improved-logbar-calendar": CalendarElement
+        "improved-attendance-calendar": CalendarElement
     }
 }

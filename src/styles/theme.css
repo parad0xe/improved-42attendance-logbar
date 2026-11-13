@@ -1,21 +1,21 @@
 :root {
-    --improved-logbar-bonus: #15803d;
-    --improved-logbar-missing: #612c2c;
-    --improved-logbar-in-progress: #cd9b2a;
-    --improved-logbar-expected-bar: #ffca0033;
-    --improved-logbar-expected-label: #4e2f08a1;
-    --improved-logbar-gap-capsule: #b45309;
-    --improved-logbar-public-holiday: #7c3aed;
-    --improved-logbar-closure: #0d9488;
+    --improved-attendance-bonus: #15803d;
+    --improved-attendance-missing: #612c2c;
+    --improved-attendance-in-progress: #cd9b2a;
+    --improved-attendance-expected-bar: #ffca0033;
+    --improved-attendance-expected-label: #4e2f08a1;
+    --improved-attendance-gap-capsule: #b45309;
+    --improved-attendance-public-holiday: #7c3aed;
+    --improved-attendance-closure: #0d9488;
 
-    --improved-logbar-day-border: #e4e4e7;
-    --improved-logbar-day-hover: #f4f4f5;
-    --improved-logbar-day-off-background: #dbeafe;
-    --improved-logbar-day-off-border: #93c5fd;
-    --improved-logbar-day-off-text: #1d4ed8;
-    --improved-logbar-past-day-border: #f4f4f5;
-    --improved-logbar-past-day-text: #a1a1aa;
-    --improved-logbar-past-day-off-background: #f4f4f5;
+    --improved-attendance-day-border: #e4e4e7;
+    --improved-attendance-day-hover: #f4f4f5;
+    --improved-attendance-day-off-background: #dbeafe;
+    --improved-attendance-day-off-border: #93c5fd;
+    --improved-attendance-day-off-text: #1d4ed8;
+    --improved-attendance-past-day-border: #f4f4f5;
+    --improved-attendance-past-day-text: #a1a1aa;
+    --improved-attendance-past-day-off-background: #f4f4f5;
 }
 
 html.dark {
@@ -57,23 +57,23 @@ html.dark {
     --cg-blue: #2bb3d4;
     --violet: #a77bff;
 
-    --improved-logbar-bonus: #4ade80;
-    --improved-logbar-missing: #f87171;
-    --improved-logbar-in-progress: #fbbf24;
-    --improved-logbar-expected-bar: #facc1530;
-    --improved-logbar-expected-label: #fde68ab3;
-    --improved-logbar-gap-capsule: #ca7016;
-    --improved-logbar-public-holiday: #a78bfa;
-    --improved-logbar-closure: #2dd4bf;
+    --improved-attendance-bonus: #4ade80;
+    --improved-attendance-missing: #f87171;
+    --improved-attendance-in-progress: #fbbf24;
+    --improved-attendance-expected-bar: #facc1530;
+    --improved-attendance-expected-label: #fde68ab3;
+    --improved-attendance-gap-capsule: #ca7016;
+    --improved-attendance-public-holiday: #a78bfa;
+    --improved-attendance-closure: #2dd4bf;
 
-    --improved-logbar-day-border: oklch(100% 0 0 / 12%);
-    --improved-logbar-day-hover: oklch(100% 0 0 / 6%);
-    --improved-logbar-day-off-background: #3b82f633;
-    --improved-logbar-day-off-border: #3b82f680;
-    --improved-logbar-day-off-text: #93c5fd;
-    --improved-logbar-past-day-border: oklch(100% 0 0 / 5%);
-    --improved-logbar-past-day-text: oklch(100% 0 0 / 30%);
-    --improved-logbar-past-day-off-background: oklch(100% 0 0 / 6%);
+    --improved-attendance-day-border: oklch(100% 0 0 / 12%);
+    --improved-attendance-day-hover: oklch(100% 0 0 / 6%);
+    --improved-attendance-day-off-background: #3b82f633;
+    --improved-attendance-day-off-border: #3b82f680;
+    --improved-attendance-day-off-text: #93c5fd;
+    --improved-attendance-past-day-border: oklch(100% 0 0 / 5%);
+    --improved-attendance-past-day-text: oklch(100% 0 0 / 30%);
+    --improved-attendance-past-day-off-background: oklch(100% 0 0 / 6%);
 }
 
 @layer utilities {
