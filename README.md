@@ -64,12 +64,26 @@ npm ci
 | `npm run typecheck` | checks the types |
 | `npm run lint` | builds, then checks the extension with web-ext |
 | `npm run firefox` | opens Firefox with the extension, reloaded on each build |
+| `npm run android` | opens Firefox for Android with the extension, reloaded on each build, see [Testing on Firefox for Android](#testing-on-firefox-for-android) |
 | `npm run package` | builds, then creates the zip for the stores in `web-ext-artifacts/` |
 
 To load the extension without a store, after `npm run build`:
 
 - Chrome: open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the folder of the repository
 - Firefox: open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `manifest.json`
+
+### Testing on Firefox for Android
+
+1. On the phone, turn on **USB debugging** in the developer options of Android, and **Remote debugging via USB** in the settings of Firefox
+2. On the computer, install `adb`, connect the phone by USB, then find its id with `adb devices`
+3. Run the extension on the phone, with `org.mozilla.firefox_beta` or `org.mozilla.fenix` instead of `org.mozilla.firefox` for Firefox Beta or Nightly:
+
+```sh
+npm run build
+npm run android -- --android-device=<id> --firefox-apk=org.mozilla.firefox
+```
+
+The extension stays installed while the command runs. To see the console of the phone, open `about:debugging` in Firefox on the computer, connect to the phone and inspect its tab
 
 ## Building from source
 
