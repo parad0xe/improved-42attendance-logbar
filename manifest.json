@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Improved 42 Attendance",
-  "version": "2026.11.17",
+  "version": "2.0.0",
   "description": "Show the gap with the expected logged time",
   "icons": { "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "content_scripts": [
