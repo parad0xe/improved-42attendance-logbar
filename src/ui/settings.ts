@@ -1,4 +1,5 @@
 import type { Labels } from "../labels"
+import { formatMinutes } from "../lib/time"
 import type { Attendance } from "../models/attendance"
 import type { MonthPlan } from "../models/month-plan"
 import "./components/calendar"
@@ -34,6 +35,8 @@ export class Settings {
     themeSwitchElement: HTMLElement
     /** The input of the planned capsules, only in the current month. */
     capsulesInputElement: HTMLInputElement | null
+    /** The text of the time to log on each planned day to reach the goal. */
+    neededDailyTimeElement: HTMLElement | null
     /** The settings of the plan of the month. */
     settingsContainerElement: HTMLElement | null
 
@@ -47,6 +50,7 @@ export class Settings {
         this.element.className = "improved-attendance-settings"
 
         this.capsulesInputElement = null
+        this.neededDailyTimeElement = null
         this.settingsContainerElement = null
     }
 
@@ -117,6 +121,10 @@ export class Settings {
         dailyTimeInputsElement.append(hoursInputElement, "h", minutesInputElement)
         dailyTimeRowElement.append(dailyTimeInputsElement)
 
+        const neededDailyTimeElement = document.createElement("span")
+        neededDailyTimeElement.className = "improved-attendance-needed-daily-time"
+        this.neededDailyTimeElement = neededDailyTimeElement
+
         calendarElement.addEventListener("change", onChange)
         const onDailyTimeChange = () => {
             const hours = hoursInputElement.valueAsNumber
@@ -132,7 +140,7 @@ export class Settings {
         hoursInputElement.addEventListener("change", onDailyTimeChange)
         minutesInputElement.addEventListener("change", onDailyTimeChange)
 
-        settingsContainerElement.append(titleElement, calendarElement, dailyTimeRowElement)
+        settingsContainerElement.append(titleElement, calendarElement, dailyTimeRowElement, neededDailyTimeElement)
 
         if (plan.isCurrentMonth()) {
             const capsulesRowElement = document.createElement("label")
@@ -174,5 +182,15 @@ export class Settings {
         if (!this.capsulesInputElement) { return }
         this.capsulesInputElement.max = String(availableCapsules)
         this.capsulesInputElement.value = String(plan.capsules)
+    }
+
+    /**
+     * Renders the time to log on each planned day to reach the goal.
+     * @param neededMinutes - the time in minutes, or null when no day is planned
+     */
+    renderNeededDailyTime(neededMinutes: number | null): void {
+        if (!this.neededDailyTimeElement) { return }
+        this.neededDailyTimeElement.hidden = neededMinutes === null
+        this.neededDailyTimeElement.textContent = neededMinutes === null ? "" : this.labels.SETTINGS_NEEDED_PER_DAY(formatMinutes(neededMinutes))
     }
 }

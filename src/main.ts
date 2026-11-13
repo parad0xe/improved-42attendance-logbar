@@ -1,6 +1,6 @@
 import { getLabels, loadLang, type Labels } from "./labels"
 import { Attendance } from "./models/attendance"
-import { MonthPlan } from "./models/month-plan"
+import { MonthPlan, type MonthTime } from "./models/month-plan"
 import LAYOUT_STYLE from "./styles/layout.css"
 import THEME_STYLE from "./styles/theme.css"
 import { Page } from "./ui/page"
@@ -64,14 +64,28 @@ async function startMonthImprovements({ settings, labels, isOutdated }: StartMon
     const page = new Page(labels)
     page.mount()
 
+    const renderMonth = (time: MonthTime) => {
+        page.render(plan, time)
+        settings.renderNeededDailyTime(plan.getNeededDailyMinutes(time))
+    }
+
     const time = page.read()
     if (plan.isCurrentMonth()) {
         plan.syncCapsules(attendance.availableCapsules, time.monthGoalMinutes)
         plan.save()
     }
-    page.render(plan, time)
 
-    const stopWatching = page.watch(async (time) => {
+    settings.render({
+        plan,
+        attendance,
+        onChange: () => {
+            plan.save()
+            renderMonth(page.read())
+        },
+    })
+    renderMonth(time)
+
+    return page.watch(async (time) => {
         // A capsule used on the site lowers the goal of the month.
         if (plan.isCurrentMonth() && time.monthGoalMinutes !== plan.lastSync?.monthGoalMinutes) {
             const { availableCapsules } = await Attendance.fetch(labels)
@@ -79,18 +93,8 @@ async function startMonthImprovements({ settings, labels, isOutdated }: StartMon
             plan.save()
             settings.renderCapsules(plan, availableCapsules)
         }
-        page.render(plan, time)
+        renderMonth(time)
     })
-
-    settings.render({
-        plan,
-        attendance,
-        onChange: () => {
-            plan.save()
-            page.render(plan, page.read())
-        },
-    })
-    return stopWatching
 }
 
 function main(): void {

@@ -207,4 +207,22 @@ export class MonthPlan {
         const start = this.isPlannedDay(now) ? end - this.dailyMinutes : end
         return { start, end }
     }
+
+    /**
+     * Returns the time to log on each planned day from today to reach the goal, in minutes, or null when no day is planned.
+     * @param time - the logged times and the time to log in the month, in minutes
+     * @param now - the current date
+     */
+    getNeededDailyMinutes(time: MonthTime, now = new Date()): number | null {
+        const isPlannedDay = this.isPlannedDay(now)
+        const plannedDays = this.countRemainingDays(now) + (isPlannedDay ? 1 : 0)
+        if (plannedDays === 0) { return null }
+
+        // A planned today counts as a full day.
+        const completedTodayMinutes = time.loggedTodayMinutes - time.runningSessionMinutes
+        const loggedMinutes = isPlannedDay
+            ? time.loggedMonthMinutes - completedTodayMinutes
+            : time.loggedMonthMinutes + time.runningSessionMinutes
+        return Math.ceil(Math.max(0, this.getGoalMinutes(time.monthGoalMinutes, now) - loggedMinutes) / plannedDays)
+    }
 }

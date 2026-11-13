@@ -4,6 +4,7 @@ export interface Labels {
     SETTINGS_THEME: string
     SETTINGS_DAYS_OFF: string
     SETTINGS_TIME_PER_REMAINING_DAY: string
+    SETTINGS_NEEDED_PER_DAY: (time: string) => string
     SETTINGS_CAPSULES_TO_USE: string
 
     GAP_EXPECTED: (time: string) => string
@@ -34,6 +35,7 @@ const LABELS: Record<string, Labels> = {
         SETTINGS_THEME: "Thème",
         SETTINGS_DAYS_OFF: "Jours de repos",
         SETTINGS_TIME_PER_REMAINING_DAY: "Temps par jour restant",
+        SETTINGS_NEEDED_PER_DAY: (time) => `Nécessaire : ${time} par jour`,
         SETTINGS_CAPSULES_TO_USE: "Capsules à poser",
 
         GAP_EXPECTED: (time) => `Prévu ${time}`,
@@ -61,6 +63,7 @@ const LABELS: Record<string, Labels> = {
         SETTINGS_THEME: "Theme",
         SETTINGS_DAYS_OFF: "Days off",
         SETTINGS_TIME_PER_REMAINING_DAY: "Time per remaining day",
+        SETTINGS_NEEDED_PER_DAY: (time) => `Needed: ${time} per day`,
         SETTINGS_CAPSULES_TO_USE: "Capsules to use",
 
         GAP_EXPECTED: (time) => `Expected ${time}`,

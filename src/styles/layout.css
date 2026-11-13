@@ -43,6 +43,7 @@
 }
 .improved-attendance-daily-time-inputs { display: flex; flex-shrink: 0; align-items: center; gap: 0.25rem; }
 .improved-attendance-daily-time-inputs input { width: 3rem; }
+.improved-attendance-needed-daily-time { font-size: 0.75rem; color: var(--muted-foreground); }
 
 .improved-attendance-credit { font-size: 0.75rem; color: var(--muted-foreground); }
 .improved-attendance-credit:hover { text-decoration: underline; }
