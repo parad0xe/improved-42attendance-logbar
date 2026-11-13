@@ -3,7 +3,7 @@ const LANG_COOKIE_KEY = "PARAGLIDE_LOCALE"
 export interface Labels {
     SETTINGS_THEME: string
     SETTINGS_DAYS_OFF: string
-    SETTINGS_HOURS_PER_REMAINING_DAY: string
+    SETTINGS_TIME_PER_REMAINING_DAY: string
     SETTINGS_CAPSULES_TO_USE: string
 
     GAP_EXPECTED: (time: string) => string
@@ -33,7 +33,7 @@ const LABELS: Record<string, Labels> = {
     fr: {
         SETTINGS_THEME: "Thème",
         SETTINGS_DAYS_OFF: "Jours de repos",
-        SETTINGS_HOURS_PER_REMAINING_DAY: "Heures par jour restant",
+        SETTINGS_TIME_PER_REMAINING_DAY: "Temps par jour restant",
         SETTINGS_CAPSULES_TO_USE: "Capsules à poser",
 
         GAP_EXPECTED: (time) => `Prévu ${time}`,
@@ -60,7 +60,7 @@ const LABELS: Record<string, Labels> = {
     en: {
         SETTINGS_THEME: "Theme",
         SETTINGS_DAYS_OFF: "Days off",
-        SETTINGS_HOURS_PER_REMAINING_DAY: "Hours per remaining day",
+        SETTINGS_TIME_PER_REMAINING_DAY: "Time per remaining day",
         SETTINGS_CAPSULES_TO_USE: "Capsules to use",
 
         GAP_EXPECTED: (time) => `Expected ${time}`,

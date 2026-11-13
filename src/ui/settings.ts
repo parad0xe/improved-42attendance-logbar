@@ -89,30 +89,50 @@ export class Settings {
         calendarElement.lang = this.lang
         calendarElement.render(plan, attendance.getDayMarks())
 
-        const hoursRowElement = document.createElement("label")
-        hoursRowElement.className = "improved-attendance-settings-row"
-        hoursRowElement.textContent = this.labels.SETTINGS_HOURS_PER_REMAINING_DAY
+        const dailyTimeRowElement = document.createElement("label")
+        dailyTimeRowElement.className = "improved-attendance-settings-row"
+        dailyTimeRowElement.textContent = this.labels.SETTINGS_TIME_PER_REMAINING_DAY
 
         const hoursInputElement = document.createElement("input")
         hoursInputElement.type = "number"
         hoursInputElement.min = "0"
         hoursInputElement.max = "24"
-        hoursInputElement.step = "0.5"
-        hoursInputElement.value = String(plan.dailyMinutes / 60)
-        hoursRowElement.append(hoursInputElement)
+        hoursInputElement.step = "1"
+
+        // -1 and 60 let the arrows carry over to the hours.
+        const minutesInputElement = document.createElement("input")
+        minutesInputElement.type = "number"
+        minutesInputElement.min = "-1"
+        minutesInputElement.max = "60"
+        minutesInputElement.step = "1"
+
+        const renderDailyTime = () => {
+            hoursInputElement.value = String(Math.floor(plan.dailyMinutes / 60))
+            minutesInputElement.value = String(plan.dailyMinutes % 60)
+        }
+        renderDailyTime()
+
+        const dailyTimeInputsElement = document.createElement("span")
+        dailyTimeInputsElement.className = "improved-attendance-daily-time-inputs"
+        dailyTimeInputsElement.append(hoursInputElement, "h", minutesInputElement)
+        dailyTimeRowElement.append(dailyTimeInputsElement)
 
         calendarElement.addEventListener("change", onChange)
-        hoursInputElement.addEventListener("change", () => {
+        const onDailyTimeChange = () => {
             const hours = hoursInputElement.valueAsNumber
-            if (!Number.isFinite(hours) || hours < 0 || hours > 24) {
-                hoursInputElement.value = String(plan.dailyMinutes / 60)
+            const minutes = minutesInputElement.valueAsNumber
+            if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+                renderDailyTime()
                 return
             }
-            plan.dailyMinutes = Math.round(hours * 60)
+            plan.dailyMinutes = Math.min(Math.max(0, Math.round(hours * 60 + minutes)), 24 * 60)
+            renderDailyTime()
             onChange()
-        })
+        }
+        hoursInputElement.addEventListener("change", onDailyTimeChange)
+        minutesInputElement.addEventListener("change", onDailyTimeChange)
 
-        settingsContainerElement.append(titleElement, calendarElement, hoursRowElement)
+        settingsContainerElement.append(titleElement, calendarElement, dailyTimeRowElement)
 
         if (plan.isCurrentMonth()) {
             const capsulesRowElement = document.createElement("label")
