@@ -13,7 +13,7 @@ export interface Labels {
     GAP_CAPSULES_LEFT: (count: number) => string
     GAP_UNAVAILABLE: string
 
-    /** from Monday */
+    /** The weekdays, from Monday. */
     CALENDAR_WEEKDAYS: string[]
     CALENDAR_PUBLIC_HOLIDAY: string
     CALENDAR_CLOSURE: string
@@ -83,9 +83,7 @@ const LABELS: Record<string, Labels> = {
     },
 }
 
-/**
- * Reads the language chosen on the site, or English when none was chosen.
- */
+/** Returns the language chosen on the site, or English when none was chosen. */
 export function loadLang(): string {
     // document.cookie rather than cookieStore, which Firefox only has since version 140.
     const langCookie = document.cookie.split("; ").find((cookie) => cookie.startsWith(`${LANG_COOKIE_KEY}=`))
@@ -93,7 +91,8 @@ export function loadLang(): string {
 }
 
 /**
- * @returns the labels in lang, or in English when lang has none
+ * Returns the labels in `lang`, or in English when it has none.
+ * @param lang - the language, such as "fr"
  */
 export function getLabels(lang: string): Labels {
     return LABELS[lang] ?? LABELS.en

@@ -1,4 +1,5 @@
 /**
+ * Returns the minutes of a duration.
  * @param text - a duration such as "26:33"
  */
 export function parseMinutes(text: string): number {
@@ -7,7 +8,8 @@ export function parseMinutes(text: string): number {
 }
 
 /**
- * @returns the duration as HH:MM, with a minus sign when negative
+ * Formats `minutes` as HH:MM, with a minus sign when negative.
+ * @param minutes - a duration in minutes
  */
 export function formatMinutes(minutes: number): string {
     const sign = minutes < 0 ? "-" : ""
@@ -16,7 +18,8 @@ export function formatMinutes(minutes: number): string {
 }
 
 /**
- * @param year
+ * Returns the number of days in the month.
+ * @param year - the year of the month
  * @param monthIndex - 0 for January
  */
 export function getDaysInMonth(year: number, monthIndex: number): number {

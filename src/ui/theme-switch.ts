@@ -4,9 +4,7 @@ const THEME_STORAGE_KEY = "improved-logbar-theme"
 
 type Theme = "light" | "dark"
 
-/**
- * @returns the theme chosen, or else the theme of the system
- */
+/** Returns the theme chosen, or else the theme of the system. */
 function loadTheme(): Theme {
     try {
         const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
@@ -19,6 +17,10 @@ function loadTheme(): Theme {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
 
+/**
+ * Saves the theme chosen.
+ * @param theme - the theme to save
+ */
 function saveTheme(theme: Theme): void {
     try {
         localStorage.setItem(THEME_STORAGE_KEY, theme)
@@ -27,20 +29,17 @@ function saveTheme(theme: Theme): void {
     }
 }
 
-/**
- * The switch between the light and dark themes, which keeps the chosen theme on the page.
- */
+/** Renders the switch between the light and dark themes, and applies the chosen one to the page. */
 export class ThemeSwitch {
-    /**
-     * The row of the switch, with its label, for the settings to show.
-     */
+    /** The row of the switch, with its label. */
     element: HTMLElement
-    /**
-     * The theme chosen.
-     */
     theme: Theme
     private switchElement: HTMLButtonElement
 
+    /**
+     * Creates the switch with the theme chosen.
+     * @param labels - the labels in the language of the site
+     */
     constructor(labels: Labels) {
         this.theme = loadTheme()
 
@@ -62,17 +61,13 @@ export class ThemeSwitch {
         this.element.append(this.switchElement)
     }
 
-    /**
-     * Applies the chosen theme to the page, and again whenever the site changes it.
-     */
+    /** Applies the chosen theme to the page, and keeps it applied. */
     mount(): void {
         this.render()
         new MutationObserver(() => this.render()).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
     }
 
-    /**
-     * Applies the chosen theme to the page, and shows on the switch the theme it leads to.
-     */
+    /** Renders the chosen theme on the page and on the switch. */
     private render(): void {
         const isDark = this.theme === "dark"
         const rootElement = document.documentElement

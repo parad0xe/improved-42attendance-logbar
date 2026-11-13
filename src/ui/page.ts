@@ -20,7 +20,8 @@ interface PageTime {
 }
 
 /**
- * @returns the text of the element, and whether the element exists
+ * Returns the text of the element at `selector`, and whether it exists.
+ * @param selector - the selector of an element that shows a time
  */
 function readTimeText(selector: string): [string, boolean] {
     const element = document.querySelector(selector)
@@ -30,6 +31,11 @@ function readTimeText(selector: string): [string, boolean] {
     return [element.textContent, true]
 }
 
+/**
+ * Returns whether `a` and `b` have the same times.
+ * @param a - the logged times and the time to log in the month, in minutes
+ * @param b - the logged times and the time to log in the month, in minutes
+ */
 function isSameTime(a: PageTime, b: PageTime): boolean {
     return a.loggedMonthMinutes === b.loggedMonthMinutes
         && a.monthGoalMinutes === b.monthGoalMinutes
@@ -37,19 +43,16 @@ function isSameTime(a: PageTime, b: PageTime): boolean {
 }
 
 export class Page {
-    /**
-     * The texts shown in the page, in the language of the site.
-     */
     labels: Labels
-    /**
-     * The month summary, where the gap is shown.
-     */
+    /** The summary of the month, where the gap is shown. */
     summaryElement: Element
-    /**
-     * The progress bar of the month, where the expected bar is shown.
-     */
+    /** The progress bar of the month, where the expected bar is shown. */
     progressTrackElement: Element
 
+    /**
+     * Finds the summary and the progress bar of the month.
+     * @param labels - the labels in the language of the site
+     */
     constructor(labels: Labels) {
         this.labels = labels
 
@@ -66,9 +69,7 @@ export class Page {
         this.progressTrackElement = progressTrackElement
     }
 
-    /**
-     * Lets the progress bar of the site hold the expected bar, under the logged time.
-     */
+    /** Prepares the progress bar of the site to hold the expected bar. */
     mount(): void {
         this.progressTrackElement.classList.add("relative")
         this.progressTrackElement.querySelector("div")!.classList.add("relative", "z-[1]")
@@ -101,7 +102,9 @@ export class Page {
     }
 
     /**
-     * Redraws the expected bar and the gap from plan.
+     * Renders the expected bar and the gap.
+     * @param plan - the plan of the month
+     * @param time - the logged times and the time to log in the month, in minutes
      */
     render(plan: MonthPlan, time: PageTime): void {
         this.renderExpectedBar(plan, time)
@@ -109,8 +112,9 @@ export class Page {
     }
 
     /**
-     * Replaces the expected bar, shown only while the logged time is behind it.
-     * Its width follows the goal shown by the site, as the progress bar of the site does.
+     * Renders the expected bar while the logged time is behind it.
+     * @param plan - the plan of the month
+     * @param time - the logged times and the time to log in the month, in minutes
      */
     private renderExpectedBar(plan: MonthPlan, time: PageTime): void {
         const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
@@ -143,8 +147,9 @@ export class Page {
     }
 
     /**
-     * Replaces the gap, shown only while the goal of the month is not reached.
-     * Below the time expected at the start of today, the gap is the delay; below the time expected at the end of today, it is the time remaining today.
+     * Renders the gap between the logged and the expected time.
+     * @param plan - the plan of the month
+     * @param time - the logged times and the time to log in the month, in minutes
      */
     private renderGap(plan: MonthPlan, time: PageTime): void {
         this.summaryElement.querySelector(".improved-logbar-gap-container")?.remove()
@@ -207,8 +212,8 @@ export class Page {
     }
 
     /**
-     * Calls onChange with the new time when one of the times changes, until an error occurs.
-     * @returns stops watching
+     * Calls `onChange` with the new time each time it changes, and returns a function that stops watching.
+     * @param onChange - called with the new logged times and time to log in the month
      */
     watch(onChange: (time: PageTime) => void | Promise<void>): () => void {
         let time = this.read()
@@ -235,8 +240,9 @@ export class Page {
     }
 
     /**
-     * Replaces the gap with a notice of the error.
-     * Static, as the error can come before any page is created, for example when the data of the month cannot be loaded.
+     * Replaces the gap with the error.
+     * @param error - the error that stopped the improvements of the month
+     * @param labels - the labels in the language of the site
      */
     static renderError(error: unknown, labels: Labels): void {
         const summaryElement = document.querySelector(SELECTORS.summary)

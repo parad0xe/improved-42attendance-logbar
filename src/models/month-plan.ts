@@ -6,32 +6,29 @@ const PLAN_STORAGE_KEY = "improved-logbar-plan"
 
 interface CapsuleSync {
     availableCapsules: number
-    /** the goal shown by the site */
+    /** The time to log in the month, in minutes. */
     monthGoalMinutes: number
 }
 
 interface StoredMonthPlan {
-    /** the days of the month, from 1, with no planned time */
     daysOff: number[]
-    /** the time planned on each remaining day */
     dailyMinutes: number
-    /** the capsules planned to be used this month */
     capsules?: number
-    /** what the site showed at the last capsule sync */
     lastSync?: CapsuleSync | null
 }
 
 interface MonthPlanOptions {
+    /** The year of the month. */
     year: number
-    /** 0 for January */
+    /** The month, 0 for January. */
     monthIndex: number
-    /** the days of the month, from 1, with no planned time */
+    /** The days of the month, from 1, with no planned time. */
     daysOff: Set<number>
-    /** the time planned on each remaining day */
+    /** The time planned on each remaining day, in minutes. */
     dailyMinutes: number
-    /** the capsules planned to be used this month */
+    /** The number of capsules planned to be used this month. */
     capsules: number
-    /** what the site showed at the last capsule sync */
+    /** The available capsules and the time to log in the month at the last capsule sync. */
     lastSync: CapsuleSync | null
 }
 
@@ -43,6 +40,7 @@ export class MonthPlan {
     capsules: number
     lastSync: CapsuleSync | null
 
+    /** Creates the plan of a month. */
     constructor({ year, monthIndex, daysOff, dailyMinutes, capsules, lastSync }: MonthPlanOptions) {
         this.year = year
         this.monthIndex = monthIndex
@@ -53,14 +51,17 @@ export class MonthPlan {
     }
 
     /**
-     * @returns the storage key of the plan of this month
+     * Returns the storage key of the plan of the month.
+     * @param year - the year of the month
+     * @param monthIndex - 0 for January
      */
     static getStorageKey(year: number, monthIndex: number): string {
         return `${PLAN_STORAGE_KEY}-${year}-${String(monthIndex + 1).padStart(2, '0')}`
     }
 
     /**
-     * Loads the saved plan of the month of attendance, or else a plan with its days that are not open workdays as days off.
+     * Loads the saved plan of the month of `attendance`, or creates a new one.
+     * @param attendance - the attendance of the month
      */
     static load(attendance: Attendance): MonthPlan {
         const { year, monthIndex } = attendance.calendar
@@ -106,6 +107,7 @@ export class MonthPlan {
     }
 
     /**
+     * Toggles whether `day` is a day off.
      * @param day - the day of the month, from 1
      */
     toggleDayOff(day: number): void {
@@ -117,7 +119,8 @@ export class MonthPlan {
     }
 
     /**
-     * @returns the days after now that are not days off
+     * Returns the number of days after `now` that are not days off.
+     * @param now - the current date
      */
     countRemainingDays(now = new Date()): number {
         let remainingDays = 0
@@ -132,28 +135,33 @@ export class MonthPlan {
     }
 
     /**
-     * @returns the minutes to have logged by today to reach the goal with the planned time
+     * Returns the time to have logged by the end of today, in minutes.
+     * @param monthGoalMinutes - the time to log in the month, in minutes
      */
     getExpectedMinutes(monthGoalMinutes: number): number {
         return this.getExpectedRange(monthGoalMinutes).end
     }
 
+    /**
+     * Returns whether the plan is for the month of `now`.
+     * @param now - the current date
+     */
     isCurrentMonth(now = new Date()): boolean {
         return this.year === now.getFullYear() && this.monthIndex === now.getMonth()
     }
 
     /**
-     * Reports whether time is planned on the day of now, in the month of the plan.
+     * Returns whether time is planned on the day of `now`.
+     * @param now - the current date
      */
     isPlannedDay(now = new Date()): boolean {
         return this.isCurrentMonth(now) && !this.daysOff.has(now.getDate())
     }
 
     /**
-     * The capsules count only in the current month, as the available capsules are shared by every month.
-     * @param monthGoalMinutes - the goal shown by the site
-     * @param now
-     * @returns the goal lowered by a workday for each planned capsule
+     * Returns the time to log in the month, in minutes, lowered by the planned capsules in the current month.
+     * @param monthGoalMinutes - the time to log in the month, in minutes
+     * @param now - the current date
      */
     getGoalMinutes(monthGoalMinutes: number, now = new Date()): number {
         if (!this.isCurrentMonth(now)) { return monthGoalMinutes }
@@ -161,13 +169,13 @@ export class MonthPlan {
     }
 
     /**
-     * Removes the capsules used since the last sync from the planned ones, and keeps at most availableCapsules.
-     * A capsule counts as used when the available capsules and the goal of the month both went down.
-     * @param availableCapsules
-     * @param monthGoalMinutes - the goal shown by the site
+     * Removes the capsules used since the last sync from the planned ones.
+     * @param availableCapsules - the number of capsules left to use
+     * @param monthGoalMinutes - the time to log in the month, in minutes
      */
     syncCapsules(availableCapsules: number, monthGoalMinutes: number): void {
         if (this.lastSync) {
+            // A capsule counts as used when the available capsules and the time to log in the month both went down.
             const usedCapsules = Math.min(
                 this.lastSync.availableCapsules - availableCapsules,
                 Math.round((this.lastSync.monthGoalMinutes - monthGoalMinutes) / WORKDAY_MINUTES),
@@ -179,9 +187,9 @@ export class MonthPlan {
     }
 
     /**
-     * @param monthGoalMinutes - the goal shown by the site
-     * @param now
-     * @returns the minutes to have logged at the start and at the end of the day of now
+     * Returns the time to have logged at the start and at the end of the day of `now`, in minutes.
+     * @param monthGoalMinutes - the time to log in the month, in minutes
+     * @param now - the current date
      */
     getExpectedRange(monthGoalMinutes: number, now = new Date()): { start: number, end: number } {
         const end = this.getGoalMinutes(monthGoalMinutes, now) - this.countRemainingDays(now) * this.dailyMinutes

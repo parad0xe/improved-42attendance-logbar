@@ -8,51 +8,36 @@ const SELECTORS = {
 }
 
 interface SettingsOptions {
-    /** the language chosen on the site, such as "fr" */
+    /** The language chosen on the site, such as "fr". */
     lang: string
-    /** the texts shown by the script, in lang */
+    /** The labels in the language of the site. */
     labels: Labels
-    /** the row of the theme switch, shown between the plan and the credit */
+    /** The row of the theme switch. */
     themeSwitchElement: HTMLElement
 }
 
 interface SettingsRenderOptions {
+    /** The plan of the month. */
     plan: MonthPlan
-    /** for the public holidays, the closures and the available capsules */
+    /** The attendance of the month. */
     attendance: Attendance
-    /** called after each change of the plan */
+    /** Called after each change of the plan. */
     onChange: () => void
 }
 
-/**
- * The settings block at the bottom of the sidebar: the plan, the theme and the credit.
- */
+/** Renders the settings block at the bottom of the sidebar. */
 export class Settings {
-    /**
-     * The language chosen on the site, such as "fr".
-     */
     lang: string
-    /**
-     * The texts shown by the script, in lang.
-     */
     labels: Labels
-    /**
-     * The block in the sidebar that holds every setting.
-     */
+    /** The block in the sidebar. */
     element: HTMLElement
-    /**
-     * The row of the theme switch, shown between the plan and the credit.
-     */
     themeSwitchElement: HTMLElement
-    /**
-     * The input of the planned capsules, only in the current month.
-     */
+    /** The input of the planned capsules, only in the current month. */
     capsulesInputElement: HTMLInputElement | null
-    /**
-     * The plan settings of the month shown, replaced when the month changes.
-     */
+    /** The settings of the plan of the month. */
     settingsContainerElement: HTMLElement | null
 
+    /** Creates the settings block. */
     constructor({ lang, labels, themeSwitchElement }: SettingsOptions) {
         this.lang = lang
         this.labels = labels
@@ -65,9 +50,7 @@ export class Settings {
         this.settingsContainerElement = null
     }
 
-    /**
-     * Adds the theme switch and the credit, and keeps the block at the bottom of the sidebar.
-     */
+    /** Adds the block to the bottom of the sidebar, and keeps it there. */
     mount(): void {
         this.element.append(this.themeSwitchElement)
 
@@ -90,9 +73,7 @@ export class Settings {
         new MutationObserver(attach).observe(document.body, { childList: true, subtree: true })
     }
 
-    /**
-     * Replaces the plan settings with the days off, the planned hours and, in the current month, the planned capsules of plan, and calls onChange after each change.
-     */
+    /** Renders the plan of the month, and calls `onChange` after each change. */
     render({ plan, attendance, onChange }: SettingsRenderOptions): void {
         this.settingsContainerElement?.remove()
         this.capsulesInputElement = null
@@ -165,7 +146,9 @@ export class Settings {
     }
 
     /**
-     * Shows the planned capsules of plan, at most availableCapsules.
+     * Renders the planned capsules of `plan`, at most `availableCapsules`.
+     * @param plan - the plan of the month
+     * @param availableCapsules - the number of capsules left to use
      */
     renderCapsules(plan: MonthPlan, availableCapsules: number): void {
         if (!this.capsulesInputElement) { return }

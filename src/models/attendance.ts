@@ -8,9 +8,9 @@ const CLOSURE_END_HOUR = 20
 
 interface AttendanceCalendar {
     year: number
-    /** 0 for January */
+    /** The month, 0 for January. */
     monthIndex: number
-    /** the working days of the month, without weekends and public holidays */
+    /** The workdays of the month, without weekends and public holidays. */
     workdays: Date[]
 }
 
@@ -20,7 +20,6 @@ interface AttendanceClosure {
 }
 
 interface AttendanceHistory {
-    /** the times when the campus is closed */
     closures: AttendanceClosure[]
 }
 
@@ -29,14 +28,13 @@ export type DayMark = "public-holiday" | "closure"
 export class Attendance {
     calendar: AttendanceCalendar
     history: AttendanceHistory
-    /**
-     * The capsules left to use, shared by every month.
-     */
+    /** The number of capsules left to use, shared by every month. */
     availableCapsules: number
 
     /**
-     * @param data - the decoded data of the /me page
-     * @param labels - for the error messages
+     * Creates the attendance of the month.
+     * @param data - the decoded data of the page
+     * @param labels - the labels in the language of the site
      */
     constructor(data: Record<string, any>, labels: Labels) {
         const { calendar, history } = data
@@ -59,7 +57,8 @@ export class Attendance {
     }
 
     /**
-     * Reports whether closures cover a full workday between 08:00 and 20:00, as on the site.
+     * Returns whether a closure covers the workday of `date`.
+     * @param date - a day of the month
      */
     isClosedDay(date: Date): boolean {
         const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), CLOSURE_START_HOUR)
@@ -78,22 +77,22 @@ export class Attendance {
     }
 
     /**
-     * @returns whether date is in the workdays of the month
+     * Returns whether `date` is a workday of the month.
+     * @param date - a day of the month
      */
     isWorkday(date: Date): boolean {
         return this.calendar.workdays.some((workday) => workday.toDateString() === date.toDateString())
     }
 
     /**
-     * Reports whether time is expected on date: a workday when the campus is not closed.
+     * Returns whether `date` is a workday without closure.
+     * @param date - a day of the month
      */
     isOpenWorkday(date: Date): boolean {
         return this.isWorkday(date) && !this.isClosedDay(date)
     }
 
-    /**
-     * @returns the public holidays and the closed workdays of the month, by day from 1
-     */
+    /** Returns the public holidays and the closures of the month, by day from 1. */
     getDayMarks(): Map<number, DayMark> {
         const { year, monthIndex } = this.calendar
 
@@ -112,8 +111,8 @@ export class Attendance {
     }
 
     /**
-     * Loads the attendance data of the month shown by the page.
-     * @param labels - for the error messages
+     * Fetches the attendance of the month shown by the page.
+     * @param labels - the labels in the language of the site
      */
     static async fetch(labels: Labels): Promise<Attendance> {
         const response = await fetch(`/me/__data.json${location.search}`, { credentials: "same-origin" })

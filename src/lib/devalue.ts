@@ -1,10 +1,15 @@
 /**
- * Decodes the devalue format of SvelteKit: each value refers to the others by their index.
+ * Decodes `values` from the devalue format of SvelteKit.
+ * @param values - the values of a node of the page data
  */
 export function decodeDevalue(values: unknown[]): any {
     const specials = new Map([[-1, undefined], [-3, NaN], [-4, Infinity], [-5, -Infinity], [-6, -0]])
     const decoded = new Map<number, any>()
 
+    /**
+     * Decodes the value at `index`.
+     * @param index - the index of the value in `values`, or a negative code for a special value
+     */
     function read(index: number): any {
         if (index < 0) return specials.get(index)
         if (decoded.has(index)) return decoded.get(index)

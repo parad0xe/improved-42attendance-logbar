@@ -3,26 +3,14 @@ import { getDaysInMonth } from "../../lib/time"
 import type { DayMark } from "../../models/attendance"
 import type { MonthPlan } from "../../models/month-plan"
 
-/**
- * Shows the days of a month plan and toggles its days off, then dispatches change.
- */
+/** Shows the days of a plan, toggles its days off and dispatches `change`. */
 class CalendarElement extends HTMLElement {
-    /**
-     * The plan whose days off are shown.
-     */
     plan: MonthPlan | null
-    /**
-     * The public holidays and closures of the month, by day from 1.
-     */
     dayMarks: Map<number, DayMark>
     shadow: ShadowRoot
-    /**
-     * The grid of the days, created once the calendar is in the page.
-     */
+    /** The grid of the days, once the calendar is in the page. */
     gridElement: Element | null
-    /**
-     * The legend of the day marks, created once the calendar is in the page.
-     */
+    /** The legend of the day marks, once the calendar is in the page. */
     legendElement: Element | null
 
     constructor() {
@@ -123,8 +111,8 @@ class CalendarElement extends HTMLElement {
     }
 
     /**
-     * Shows the days of plan, with the public holidays and closures of the month.
-     * @param plan
+     * Renders the days of `plan` with their `dayMarks`.
+     * @param plan - the plan of the month
      * @param dayMarks - the public holidays and closures of the month, by day from 1
      */
     render(plan: MonthPlan, dayMarks: Map<number, DayMark>): void {
@@ -133,9 +121,7 @@ class CalendarElement extends HTMLElement {
         this.draw()
     }
 
-    /**
-     * Draws the month of the plan in weeks from Monday, then the legend of its day marks, in the lang of the calendar.
-     */
+    /** Draws the days of the plan and the legend of their marks. */
     private draw(): void {
         if (!this.plan || !this.gridElement || !this.legendElement) { return }
 
@@ -167,7 +153,8 @@ class CalendarElement extends HTMLElement {
     }
 
     /**
-     * @returns the name of mark, in the lang of the calendar
+     * Returns the label of `mark` in the language of the calendar.
+     * @param mark - a public holiday or a closure
      */
     private getMarkLabel(mark: DayMark): string {
         const labels = getLabels(this.lang)
@@ -175,8 +162,8 @@ class CalendarElement extends HTMLElement {
     }
 
     /**
-     * Only the days after today can be toggled, as the others no longer change the gap.
-     * @param plan
+     * Creates the element of `day`, which toggles the day off when it is after today.
+     * @param plan - the plan of the month
      * @param day - the day of the month, from 1
      */
     private createDayElement(plan: MonthPlan, day: number): HTMLDivElement {

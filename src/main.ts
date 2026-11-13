@@ -8,14 +8,17 @@ import { Settings } from "./ui/settings"
 import { ThemeSwitch } from "./ui/theme-switch"
 
 interface StartMonthImprovementsOptions {
+    /** The `Settings` object that renders the plan of the month. */
     settings: Settings
+    /** The labels in the language of the site. */
     labels: Labels
-    /** whether another month was shown since the start */
+    /** Returns whether another month was shown since the start. */
     isOutdated: () => boolean
 }
 
 /**
- * Calls onChange when the query of the URL changes, as when the site shows another month without reloading.
+ * Calls `onChange` each time the query of the URL changes.
+ * @param onChange - called when the site shows another month
  */
 function watchUrl(onChange: () => void): void {
     let search = location.search
@@ -28,10 +31,7 @@ function watchUrl(onChange: () => void): void {
     }).observe(document.body, { childList: true, subtree: true })
 }
 
-/**
- * Starts the improvements of the month in the URL: the gap and the expected bar in the page, and the plan in the settings.
- * @returns stops watching the page
- */
+/** Starts the improvements of the month in the URL, and returns a function that stops them. */
 async function startMonthImprovements({ settings, labels, isOutdated }: StartMonthImprovementsOptions): Promise<() => void> {
     const attendance = await Attendance.fetch(labels)
     if (isOutdated()) { return () => {} }
