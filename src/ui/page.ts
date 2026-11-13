@@ -154,7 +154,7 @@ export class Page {
     }
 
     /**
-     * Renders the gap between the logged and the expected time.
+     * Renders the gap between the logged and the expected time, today and at the end of the month.
      * @param plan - the plan of the month
      * @param time - the logged times and the time to log in the month, in minutes
      */
@@ -214,11 +214,28 @@ export class Page {
             gapTodayContainerElement.append(gapDaysElement)
         }
 
-        if (plan.isCurrentMonth() && plan.capsules > 0) {
-            const gapCapsuleElement = document.createElement("span")
-            gapCapsuleElement.className = "improved-attendance-gap-capsule"
-            gapCapsuleElement.textContent = this.labels.GAP_CAPSULES_LEFT(plan.capsules)
-            gapContainerElement.append(gapCapsuleElement)
+        if (plan.isCurrentMonth()) {
+            const monthEndMinutes = plan.getProjectedMinutes(time) - plan.getGoalMinutes(time.monthGoalMinutes)
+            const isMonthEndBonus = monthEndMinutes >= 0
+            const gapMonthEndContainerElement = document.createElement("span")
+            gapMonthEndContainerElement.className = "improved-attendance-gap-month-end-container"
+            gapContainerElement.append(gapMonthEndContainerElement)
+
+            const gapMonthEndLabelElement = document.createElement("span")
+            gapMonthEndLabelElement.className = "improved-attendance-gap-month-end-label"
+            gapMonthEndLabelElement.textContent = this.labels.GAP_MONTH_END
+
+            const gapMonthEndTimeElement = document.createElement("strong")
+            gapMonthEndTimeElement.className = isMonthEndBonus ? "improved-attendance-bonus" : "improved-attendance-missing"
+            gapMonthEndTimeElement.textContent = `${isMonthEndBonus ? "+" : ""}${formatMinutes(monthEndMinutes)}`
+            gapMonthEndContainerElement.append(gapMonthEndLabelElement, gapMonthEndTimeElement)
+
+            if (plan.capsules > 0) {
+                const gapCapsuleElement = document.createElement("span")
+                gapCapsuleElement.className = "improved-attendance-gap-capsule"
+                gapCapsuleElement.textContent = this.labels.GAP_CAPSULES_LEFT(plan.capsules)
+                gapContainerElement.append(gapCapsuleElement)
+            }
         }
     }
 

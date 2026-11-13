@@ -12,6 +12,7 @@ export interface Labels {
     GAP_BONUS_DAYS: (days: number) => string
     GAP_MISSING_DAYS: (days: number) => string
     GAP_REMAINING_TODAY: (time: string) => string
+    GAP_MONTH_END: string
     GAP_CAPSULES_LEFT: (count: number) => string
     GAP_UNAVAILABLE: string
 
@@ -44,6 +45,7 @@ const LABELS: Record<string, Labels> = {
         GAP_BONUS_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour" : "jours"} bonus`,
         GAP_MISSING_DAYS: (days) => `${days.toFixed(1).replace(".", ",")} ${days < 2 ? "jour manquant" : "jours manquants"}`,
         GAP_REMAINING_TODAY: (time) => `reste ${time} aujourd'hui`,
+        GAP_MONTH_END: "fin du mois",
         GAP_CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} à poser`,
         GAP_UNAVAILABLE: "écart indisponible",
 
@@ -73,6 +75,7 @@ const LABELS: Record<string, Labels> = {
         GAP_BONUS_DAYS: (days) => `${days.toFixed(1)} bonus ${days < 2 ? "day" : "days"}`,
         GAP_MISSING_DAYS: (days) => `${days.toFixed(1)} missing ${days < 2 ? "day" : "days"}`,
         GAP_REMAINING_TODAY: (time) => `remaining ${time} today`,
+        GAP_MONTH_END: "month end",
         GAP_CAPSULES_LEFT: (count) => `${count} ${count > 1 ? "capsules" : "capsule"} to use`,
         GAP_UNAVAILABLE: "gap unavailable",
 

@@ -15,9 +15,11 @@
 
 .improved-attendance-gap-container { display: flex; align-items: center; justify-content: end; flex-basis: 100%; margin-bottom: 0.25rem; font-size: 0.9rem; gap: 0.5rem; }
 .improved-attendance-gap-container > * + * { padding-left: 0.5rem; border-left: 1px solid var(--border); }
-.improved-attendance-gap-today-container { display: flex; align-items: baseline; gap: 0.375rem; }
+.improved-attendance-gap-today-container,
+.improved-attendance-gap-month-end-container { display: flex; align-items: baseline; gap: 0.375rem; }
 .improved-attendance-gap-days { font-size: 0.8rem; }
 .improved-attendance-gap-capsule { color: var(--improved-attendance-gap-capsule); font-style: italic; font-weight: bold; text-decoration: underline; }
+.improved-attendance-gap-month-end-label { font-size: 0.8rem; color: var(--muted-foreground); }
 
 .improved-attendance-bonus { color: var(--improved-attendance-bonus); }
 .improved-attendance-missing { color: var(--improved-attendance-missing); }

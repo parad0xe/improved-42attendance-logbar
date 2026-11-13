@@ -225,4 +225,15 @@ export class MonthPlan {
             : time.loggedMonthMinutes + time.runningSessionMinutes
         return Math.ceil(Math.max(0, this.getGoalMinutes(time.monthGoalMinutes, now) - loggedMinutes) / plannedDays)
     }
+
+    /**
+     * Returns the time logged by the end of the month when the plan is followed, in minutes.
+     * @param time - the logged times and the time to log in the month, in minutes
+     * @param now - the current date
+     */
+    getProjectedMinutes(time: MonthTime, now = new Date()): number {
+        const loggedTotalMinutes = time.loggedMonthMinutes + time.runningSessionMinutes
+        const remainingTodayMinutes = this.isPlannedDay(now) ? Math.max(0, this.dailyMinutes - time.loggedTodayMinutes) : 0
+        return loggedTotalMinutes + remainingTodayMinutes + this.countRemainingDays(now) * this.dailyMinutes
+    }
 }
