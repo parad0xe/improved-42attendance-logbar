@@ -25,7 +25,7 @@ export interface Labels {
     ERROR_PROGRESS_BAR_NOT_FOUND: string
     ERROR_LOGGED_MONTH_NOT_FOUND: string
     ERROR_MONTH_GOAL_NOT_FOUND: string
-    WARNING_LOGGED_TODAY_NOT_FOUND: string
+    WARNING_RUNNING_SESSION_NOT_FOUND: string
 }
 
 const LABELS: Record<string, Labels> = {
@@ -53,7 +53,7 @@ const LABELS: Record<string, Labels> = {
         ERROR_PROGRESS_BAR_NOT_FOUND: "impossible de trouver la barre de progression, la mise en page a peut-être changé",
         ERROR_LOGGED_MONTH_NOT_FOUND: "impossible de trouver le temps logué du mois, la mise en page a peut-être changé",
         ERROR_MONTH_GOAL_NOT_FOUND: "impossible de trouver l'objectif du mois, la mise en page a peut-être changé",
-        WARNING_LOGGED_TODAY_NOT_FOUND: "impossible de trouver le temps logué aujourd'hui",
+        WARNING_RUNNING_SESSION_NOT_FOUND: "impossible de trouver la session en cours",
     },
     en: {
         SETTINGS_THEME: "Theme",
@@ -79,7 +79,7 @@ const LABELS: Record<string, Labels> = {
         ERROR_PROGRESS_BAR_NOT_FOUND: "cannot find the progress bar, the page layout may have changed",
         ERROR_LOGGED_MONTH_NOT_FOUND: "cannot find the logged time of the month, the page layout may have changed",
         ERROR_MONTH_GOAL_NOT_FOUND: "cannot find the goal of the month, the page layout may have changed",
-        WARNING_LOGGED_TODAY_NOT_FOUND: "cannot find the time logged today",
+        WARNING_RUNNING_SESSION_NOT_FOUND: "cannot find the running session",
     },
 }
 

@@ -10,12 +10,17 @@ const SELECTORS = {
     loggedMonth: "[data-slot='sidebar-inset'] main div:nth-of-type(2) > div div:nth-of-type(2) span:nth-of-type(1)",
     monthGoal: "[data-slot='sidebar-inset'] main div:nth-of-type(2) > div div:nth-of-type(2) span:nth-of-type(3)",
     timerParts: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div > span",
-    loggedToday: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(1)",
+    runningSession: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(1)",
+    loggedToday: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(2)",
 }
 
 interface PageTime {
+    /** The time logged in the month, without the running session, in minutes. */
     loggedMonthMinutes: number
     monthGoalMinutes: number
+    /** The time of the running session, in minutes. */
+    runningSessionMinutes: number
+    /** The time logged today, with the running session, in minutes. */
     loggedTodayMinutes: number
 }
 
@@ -39,6 +44,7 @@ function readTimeText(selector: string): [string, boolean] {
 function isSameTime(a: PageTime, b: PageTime): boolean {
     return a.loggedMonthMinutes === b.loggedMonthMinutes
         && a.monthGoalMinutes === b.monthGoalMinutes
+        && a.runningSessionMinutes === b.runningSessionMinutes
         && a.loggedTodayMinutes === b.loggedTodayMinutes
 }
 
@@ -87,17 +93,21 @@ export class Page {
         }
 
         let isTimerStarted = document.querySelectorAll(SELECTORS.timerParts).length === 2
-        let [loggedTodayText, hasLoggedToday] = isTimerStarted
-            ? readTimeText(SELECTORS.loggedToday)
+        let [runningSessionText, hasRunningSession] = isTimerStarted
+            ? readTimeText(SELECTORS.runningSession)
             : ["00:00", true]
-        if (!hasLoggedToday) {
-            console.warn(`${EXTENSION_NAME}: ${this.labels.WARNING_LOGGED_TODAY_NOT_FOUND}`)
+        if (!hasRunningSession) {
+            console.warn(`${EXTENSION_NAME}: ${this.labels.WARNING_RUNNING_SESSION_NOT_FOUND}`)
         }
+
+        // Without any log today, the site shows no time for today.
+        let [loggedTodayText] = readTimeText(SELECTORS.loggedToday)
 
         return {
             loggedMonthMinutes: parseMinutes(loggedMonthText),
             monthGoalMinutes: parseMinutes(monthGoalText),
-            loggedTodayMinutes: parseMinutes(loggedTodayText.replace("+", "").trim()),
+            runningSessionMinutes: parseMinutes(runningSessionText.replace("+", "").trim()),
+            loggedTodayMinutes: parseMinutes(loggedTodayText.trim()),
         }
     }
 
@@ -120,7 +130,7 @@ export class Page {
         const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
         let expectedBarElement = this.progressTrackElement.querySelector<HTMLElement>(".improved-attendance-expected-bar")
 
-        const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
+        const loggedTotalMinutes = time.loggedMonthMinutes + time.runningSessionMinutes
         if (time.loggedMonthMinutes >= plan.getGoalMinutes(time.monthGoalMinutes) || expectedMinutes <= loggedTotalMinutes) {
             expectedBarElement?.remove()
             return
@@ -159,7 +169,7 @@ export class Page {
         this.summaryElement.classList.add("improved-attendance-summary")
 
         const { start, end } = plan.getExpectedRange(time.monthGoalMinutes)
-        const loggedTotalMinutes = time.loggedMonthMinutes + time.loggedTodayMinutes
+        const loggedTotalMinutes = time.loggedMonthMinutes + time.runningSessionMinutes
         const expectedMinutes = loggedTotalMinutes < start ? start : end
         const gapMinutes = Math.abs(expectedMinutes - loggedTotalMinutes)
         const gapDays = gapMinutes / plan.dailyMinutes
