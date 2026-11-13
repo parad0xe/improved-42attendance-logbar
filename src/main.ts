@@ -81,12 +81,12 @@ function main(): void {
     themeSwitch.mount()
 
     const settings = new Settings({ lang, labels, themeSwitchElement: themeSwitch.element })
-    settings.mount()
+    let isSettingsMounted = false
 
     let lastRun = 0
     let stopMonthImprovements = () => {}
 
-    const restartMonthImprovements = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    const restartMonthImprovements = () => requestAnimationFrame(() => {
         const run = ++lastRun
         const isOutdated = () => run !== lastRun
 
@@ -104,7 +104,13 @@ function main(): void {
                 console.error(error)
                 Page.renderError(error, labels)
             })
-    }))
+            .finally(() => {
+                // Added to the sidebar before Svelte hydrates it, the settings would break its hydration.
+                if (isSettingsMounted) { return }
+                isSettingsMounted = true
+                settings.mount()
+            })
+    })
 
     restartMonthImprovements()
     watchUrl(restartMonthImprovements)
