@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.ref_name }}
+      WEB_EXT_API_KEY: ${{ secrets.AMO_API_KEY }}
+      WEB_EXT_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: npm ci
+
+      - name: Check that the tag is the version of the manifest
+        run: test "${VERSION#v}" = "$(node -p 'require("./manifest.json").version')"
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run package
+
+      - name: Archive the source code
+        run: git archive --format=zip -o "web-ext-artifacts/source-${VERSION#v}.zip" HEAD
+
+      - name: Create the GitHub release
+        run: gh release create "$VERSION" web-ext-artifacts/*.zip --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # Skipped until the AMO secrets exist, as the first version is submitted by hand.
+      - name: Publish on Firefox Add-ons
+        if: env.WEB_EXT_API_KEY != ''
+        run: npx web-ext sign --channel=listed --upload-source-code="web-ext-artifacts/source-${VERSION#v}.zip" --approval-timeout=0

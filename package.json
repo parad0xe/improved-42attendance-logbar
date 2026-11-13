@@ -1,0 +1,30 @@
+{
+	"name": "improved-attendance",
+	"private": true,
+	"type": "module",
+	"description": "Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bonus or missing time compared with the time expected by today, based on your own days off, planned hours and capsules",
+	"scripts": {
+		"build": "node build.mjs",
+		"dev": "node build.mjs --watch",
+		"typecheck": "tsc --noEmit",
+		"lint": "npm run build && web-ext lint",
+		"firefox": "web-ext run --target=firefox-desktop",
+		"package": "npm run build && web-ext build --overwrite-dest"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/parad0xe/improved-attendance.git"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/parad0xe/improved-attendance/issues"
+	},
+	"homepage": "https://github.com/parad0xe/improved-attendance#readme",
+	"devDependencies": {
+		"esbuild": "^0.28.2",
+		"typescript": "^7.0.2",
+		"web-ext": "^10.8.0"
+	}
+}

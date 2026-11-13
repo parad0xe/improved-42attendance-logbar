@@ -1,13 +1,15 @@
-# Improved Attendance Logbar
+# Improved 42 Attendance
 
 Shows on the [42 Lyon attendance page](https://attendance.42lyon.fr/me) your bonus or missing time compared with the time expected by today, based on your own days off, planned hours and capsules
+
+![The attendance page with the gap, the calendar of the days off and the settings, in the dark theme](resources/dark-attendance.png)
 
 ## Features
 
 ### Gap
 
 - Shows your bonus or missing time, in hours and in days, compared with the time to have logged by today to reach the goal of the month with your plan
-- While your planned time of today is in progress, shows the time remaining today instead
+- While your planned time of today is in progress, shows the time remaining today
 - Shows the time expected by today on the progress bar
 - Updates by itself when your logged time changes, without reloading the page
 
@@ -28,28 +30,54 @@ The texts follow the language of the site, in French or English
 
 ## Installation
 
-### 1. Install Tampermonkey
+Install the extension from the store of your browser:
 
-- [Chrome](https://chromewebstore.google.com/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-- [Firefox](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)
-- [Edge](https://microsoftedge.microsoft.com/addons/detail/iikmkjmpaadaobahmlepeloendndfphd)
-- [Safari](https://apps.apple.com/app/tampermonkey/id6738342400)
+- Firefox 128 or later: Firefox Add-ons, link to come
+- Chrome 111 or later: Chrome Web Store, link to come
 
-#### 1.1 Allow user scripts (Chrome only)
-
-1. Open `chrome://extensions`
-2. Click **Details** under Tampermonkey
-3. Turn on **Allow user scripts**
-
-On older Chrome versions, turn on **Developer mode** at the top right of `chrome://extensions` instead
-
-### 2. Install the script
-
-1. Open [improved-42attendance-logbar.user.js](https://raw.githubusercontent.com/parad0xe/improved-42attendance-logbar/main/improved-42attendance-logbar.user.js), then click **Install**
-2. Reload the [attendance page](https://attendance.42lyon.fr/me)
+Until it is published, load it from the source, see [Development](#development)
 
 ## Updates
 
-Tampermonkey checks for updates once a day.
+Your browser updates the extension by itself
 
-> To update now, open the script in Tampermonkey, go to its settings and click **Check for userscript updates**
+## Moving from the userscript
+
+The extension replaces the Tampermonkey userscript
+
+1. Remove the userscript from Tampermonkey, otherwise the gap and the settings show twice
+2. Install the extension
+3. Choose your days off, planned hours, capsules and theme again, as the settings of the userscript are not kept
+
+## Development
+
+Requires Node.js 20 or later
+
+```sh
+npm ci
+```
+
+| Command | Does |
+|---|---|
+| `npm run build` | bundles `src/` into `dist/content.js` |
+| `npm run dev` | rebuilds `dist/content.js` on each change |
+| `npm run typecheck` | checks the types |
+| `npm run lint` | builds, then checks the extension with web-ext |
+| `npm run firefox` | opens Firefox with the extension, reloaded on each build |
+| `npm run package` | builds, then creates the zip for the stores in `web-ext-artifacts/` |
+
+To load the extension without a store, after `npm run build`:
+
+- Chrome: open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the folder of the repository
+- Firefox: open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `manifest.json`
+
+## Building from source
+
+The extension published in the stores is built from this repository, with Node.js 20 or later:
+
+```sh
+npm ci
+npm run build
+```
+
+The build creates `dist/content.js`, the only generated file, which `manifest.json` loads on the attendance page
