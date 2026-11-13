@@ -196,24 +196,28 @@ export class Page {
         gapContainerElement.className = "improved-attendance-gap-container"
         this.summaryElement.prepend(gapContainerElement)
 
+        const gapTodayContainerElement = document.createElement("span")
+        gapTodayContainerElement.className = "improved-attendance-gap-today-container"
+        gapContainerElement.append(gapTodayContainerElement)
+
         const gapTimeElement = document.createElement("strong")
         gapTimeElement.classList.add(gapDirection.className)
         gapTimeElement.title = this.labels.GAP_EXPECTED(formatMinutes(expectedMinutes))
         gapTimeElement.textContent = gapDirection.label
-        gapContainerElement.prepend(gapTimeElement)
+        gapTodayContainerElement.append(gapTimeElement)
 
         if (plan.dailyMinutes > 0 && gapDirection.formatDays) {
             const gapDaysElement = document.createElement("span")
             gapDaysElement.className = "improved-attendance-gap-days"
             gapDaysElement.classList.add(gapDirection.className)
-            gapDaysElement.textContent = `(${gapDirection.formatDays(gapDays)})`
-            gapContainerElement.append(gapDaysElement)
+            gapDaysElement.textContent = gapDirection.formatDays(gapDays)
+            gapTodayContainerElement.append(gapDaysElement)
         }
 
         if (plan.isCurrentMonth() && plan.capsules > 0) {
             const gapCapsuleElement = document.createElement("span")
             gapCapsuleElement.className = "improved-attendance-gap-capsule"
-            gapCapsuleElement.textContent = `(${this.labels.GAP_CAPSULES_LEFT(plan.capsules)})`
+            gapCapsuleElement.textContent = this.labels.GAP_CAPSULES_LEFT(plan.capsules)
             gapContainerElement.append(gapCapsuleElement)
         }
     }
