@@ -4,7 +4,7 @@
     --improved-attendance-in-progress: #cd9b2a;
     --improved-attendance-expected-bar: #ffca0033;
     --improved-attendance-expected-label: #4e2f08a1;
-    --improved-attendance-gap-capsule: #0b317e;
+    --improved-attendance-gap-capsule: #a77bff;
     --improved-attendance-public-holiday: #7c3aed;
     --improved-attendance-closure: #0d9488;
 
@@ -62,7 +62,7 @@ html.dark {
     --improved-attendance-in-progress: #fbbf24;
     --improved-attendance-expected-bar: #facc1530;
     --improved-attendance-expected-label: #fde68ab3;
-    --improved-attendance-gap-capsule: #5bbfc3;
+    --improved-attendance-gap-capsule: #a77bff;
     --improved-attendance-public-holiday: #a78bfa;
     --improved-attendance-closure: #2dd4bf;
 
