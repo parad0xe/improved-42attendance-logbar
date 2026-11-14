@@ -2,7 +2,7 @@
 	"name": "improved-attendance",
 	"private": true,
 	"type": "module",
-	"description": "Improves the 42 Lyon attendance page: plan your month and follow your progress toward the goal of the month",
+	"description": "Improves the 42 Lyon attendance page with tools to plan your month and follow your progress",
 	"scripts": {
 		"build": "node build.mjs",
 		"dev": "node build.mjs --watch",
