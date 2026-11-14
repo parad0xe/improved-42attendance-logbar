@@ -5,13 +5,13 @@ import type { MonthPlan, MonthTime } from "../models/month-plan"
 
 const SELECTORS = {
     main: "[data-slot='sidebar-inset'] main",
-    summary: "[data-slot='sidebar-inset'] main div:nth-of-type(2) div:nth-of-type(1)",
-    progressTrack: "[data-slot='sidebar-inset'] main div:nth-of-type(2) div:nth-of-type(2) div:nth-of-type(2)",
-    loggedMonth: "[data-slot='sidebar-inset'] main div:nth-of-type(2) > div div:nth-of-type(2) span:nth-of-type(1)",
-    monthGoal: "[data-slot='sidebar-inset'] main div:nth-of-type(2) > div div:nth-of-type(2) span:nth-of-type(3)",
-    timerParts: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div > span",
-    runningSession: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:nth-of-type(1)",
-    loggedToday: "[data-slot='sidebar-inset'] main div:nth-of-type(3) div:nth-of-type(2) > div > div div > span:last-of-type",
+    summary: "[data-slot='sidebar-inset'] main div.mb-3 div:nth-of-type(1)",
+    progressTrack: "[data-slot='sidebar-inset'] main div.mb-3 div:nth-of-type(2) div:nth-of-type(2)",
+    loggedMonth: "[data-slot='sidebar-inset'] main div.mb-3 > div div:nth-of-type(2) span:nth-of-type(1)",
+    monthGoal: "[data-slot='sidebar-inset'] main div.mb-3 > div div:nth-of-type(2) span:nth-of-type(3)",
+    timerParts: "[data-slot='sidebar-inset'] main div.mt-8 div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div > span",
+    runningSession: "[data-slot='sidebar-inset'] main div.mt-8 div:nth-of-type(2) > div > div div > span:nth-of-type(1)",
+    loggedToday: "[data-slot='sidebar-inset'] main div.mt-8 div:nth-of-type(2) > div > div div > span:last-of-type",
 }
 
 /**
