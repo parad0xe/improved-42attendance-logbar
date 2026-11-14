@@ -208,7 +208,7 @@ export class MonthPlan {
 
     /**
      * Returns the time to log on each planned day from today to reach the goal, in minutes, or null when no day is planned.
-     * @param time - the logged times and the time to log in the month, in minutes
+     * @param time - the times of the month
      * @param now - the current date
      */
     getNeededDailyMinutes(time: MonthTime, now = new Date()): number | null {
@@ -226,7 +226,7 @@ export class MonthPlan {
 
     /**
      * Returns the time logged by the end of the month when the plan is followed, in minutes.
-     * @param time - the logged times and the time to log in the month, in minutes
+     * @param time - the times of the month
      * @param now - the current date
      */
     getProjectedMinutes(time: MonthTime, now = new Date()): number {

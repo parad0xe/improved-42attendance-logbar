@@ -28,8 +28,8 @@ function readTimeText(selector: string): [string, boolean] {
 
 /**
  * Returns whether `a` and `b` have the same times.
- * @param a - the logged times and the time to log in the month, in minutes
- * @param b - the logged times and the time to log in the month, in minutes
+ * @param a - the times of the month
+ * @param b - the times of the month
  */
 function isSameTime(a: MonthTime, b: MonthTime): boolean {
     return a.loggedMonthMinutes === b.loggedMonthMinutes
@@ -111,7 +111,7 @@ export class Page {
     /**
      * Renders the expected bar and the gap.
      * @param plan - the plan of the month
-     * @param time - the logged times and the time to log in the month, in minutes
+     * @param time - the times of the month
      */
     render(plan: MonthPlan, time: MonthTime): void {
         this.renderExpectedBar(plan, time)
@@ -121,7 +121,7 @@ export class Page {
     /**
      * Renders the expected bar while the logged time is behind it.
      * @param plan - the plan of the month
-     * @param time - the logged times and the time to log in the month, in minutes
+     * @param time - the times of the month
      */
     private renderExpectedBar(plan: MonthPlan, time: MonthTime): void {
         const expectedMinutes = plan.getExpectedMinutes(time.monthGoalMinutes)
@@ -156,7 +156,7 @@ export class Page {
     /**
      * Renders the gap between the logged and the expected time, today and at the end of the month.
      * @param plan - the plan of the month
-     * @param time - the logged times and the time to log in the month, in minutes
+     * @param time - the times of the month
      */
     private renderGap(plan: MonthPlan, time: MonthTime): void {
         this.summaryElement.querySelector(".improved-attendance-gap-container")?.remove()
@@ -241,7 +241,7 @@ export class Page {
 
     /**
      * Calls `onChange` with the new time each time it changes, and returns a function that stops watching.
-     * @param onChange - called with the new logged times and time to log in the month
+     * @param onChange - called with the new times of the month
      */
     watch(onChange: (time: MonthTime) => void | Promise<void>): () => void {
         let time = this.read()

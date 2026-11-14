@@ -92,7 +92,7 @@ export class Attendance {
         return this.isWorkday(date) && !this.isClosedDay(date)
     }
 
-    /** Returns the public holidays and the closures of the month, by day from 1. */
+    /** Returns the marks of the days of the month, by day from 1. */
     getDayMarks(): Map<number, DayMark> {
         const { year, monthIndex } = this.calendar
 

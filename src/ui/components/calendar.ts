@@ -113,7 +113,7 @@ class CalendarElement extends HTMLElement {
     /**
      * Renders the days of `plan` with their `dayMarks`.
      * @param plan - the plan of the month
-     * @param dayMarks - the public holidays and closures of the month, by day from 1
+     * @param dayMarks - the marks of the days of the month, by day from 1
      */
     render(plan: MonthPlan, dayMarks: Map<number, DayMark>): void {
         this.plan = plan
