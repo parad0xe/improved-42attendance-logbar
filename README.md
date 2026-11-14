@@ -20,7 +20,7 @@ Improves the [42 Lyon attendance page](https://attendance.42lyon.fr/me) with too
 ### Follow your progress
 
 - See whether you are ahead of or behind the time expected by today, in hours and in days
-- While your planned time of today is in progress, see the time remaining today
+- On a planned day, see the time remaining today
 - See whether you will end the month ahead or behind if you follow your plan
 - See the capsules you still plan to use
 - See the time expected by today on the progress bar
