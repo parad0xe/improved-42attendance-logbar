@@ -206,11 +206,19 @@ export class Page {
         }
 
         if (remainingTodayMinutes > 0) {
+            const gapRemainingTodayContainerElement = document.createElement("span")
+            gapRemainingTodayContainerElement.className = "improved-attendance-gap-remaining-today-container"
+            gapContainerElement.append(gapRemainingTodayContainerElement)
+
             const gapRemainingTodayElement = document.createElement("strong")
-            gapRemainingTodayElement.className = "improved-attendance-gap-remaining-today"
-            gapRemainingTodayElement.classList.add("improved-attendance-in-progress")
-            gapRemainingTodayElement.textContent = this.labels.GAP_REMAINING_TODAY(formatMinutes(remainingTodayMinutes))
-            gapContainerElement.append(gapRemainingTodayElement)
+            gapRemainingTodayElement.className = "improved-attendance-gap-remaining-today improved-attendance-in-progress"
+            gapRemainingTodayElement.textContent = formatMinutes(remainingTodayMinutes)
+            gapRemainingTodayContainerElement.append(gapRemainingTodayElement)
+
+            const gapRemainingTodayLabelElement = document.createElement("span")
+            gapRemainingTodayLabelElement.className = "improved-attendance-gap-remaining-today-label improved-attendance-in-progress"
+            gapRemainingTodayLabelElement.textContent = this.labels.GAP_REMAINING_TODAY
+            gapRemainingTodayContainerElement.append(gapRemainingTodayLabelElement)
         }
 
         if (plan.isCurrentMonth()) {
