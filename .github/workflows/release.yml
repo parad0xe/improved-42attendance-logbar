@@ -74,7 +74,7 @@ jobs:
     env:
       CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
       CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
-      CWS_EXTENSION_ID: lbifhclehfgdpjdkpfpjilimhnnedain
+      CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
     steps:
       - uses: actions/download-artifact@v8
         with:
