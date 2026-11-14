@@ -46,14 +46,6 @@ Until it is published on Firefox Add-ons, load it in Firefox from the source, se
 
 Your browser updates the extension by itself
 
-## Moving from the userscript
-
-The extension replaces the Tampermonkey userscript
-
-1. Remove the userscript from Tampermonkey, otherwise the gap and the settings show twice
-2. Install the extension
-3. Choose your days off, planned time, capsules and theme again, as the settings of the userscript are not kept
-
 ## Development
 
 Requires Node.js 20 or later
