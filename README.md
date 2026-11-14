@@ -4,36 +4,34 @@
 [![License](https://img.shields.io/github/license/parad0xe/improved-attendance)](LICENSE)
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/lbifhclehfgdpjdkpfpjilimhnnedain)](https://chromewebstore.google.com/detail/lbifhclehfgdpjdkpfpjilimhnnedain)
 
-Improves the [42 Lyon attendance page](https://attendance.42lyon.fr/me): plan your days off, time per day and capsules for the month, see the time needed each day to reach the goal, and follow your progress toward it, today and by the end of the month
+Improves the [42 Lyon attendance page](https://attendance.42lyon.fr/me) with tools to plan your month and follow your progress
 
 ![The attendance page with the gap, the calendar of the days off and the settings, in the dark theme](resources/screenshot.png)
 
 ## Features
 
-### Gap
+### Plan your month
 
-- Shows your bonus or missing time, in hours and in days, compared with the time to have logged by today to reach the goal of the month with your plan
-- While your planned time of today is in progress, shows the time remaining today
-- Shows your bonus or missing time at the end of the month if you follow your plan
-- In the current month, shows the capsules you still plan to use
-- Shows the time expected by today on the progress bar
-- Updates by itself when your logged time changes, without reloading the page
+- Choose your days off on a calendar, with weekends, public holidays and school closures selected by default
+- Set the time you plan for each remaining day, in hours and minutes, 7:00 by default
+- See the time needed on each planned day to reach the goal of the month
+- In the current month, plan the capsules you will use, each one lowering the goal of the month by 7 hours
 
-### Settings
+### Follow your progress
 
-A block in the sidebar holds:
+- See whether you are ahead of or behind the time expected by today, in hours and in days
+- While your planned time of today is in progress, see the time remaining today
+- See whether you will end the month ahead or behind if you follow your plan
+- See the capsules you still plan to use
+- See the time expected by today on the progress bar
+- Everything updates by itself when your logged time changes
 
-- a calendar to choose your days off, with weekends, public holidays and campus closures selected by default
-- the time you plan for each remaining day, in hours and minutes, 7:00 by default
-- the time needed on each planned day, from today, to reach the goal of the month
-- in the current month, the capsules you plan to use, each one lowering the goal of the month by 7 hours
-- a switch between the light and dark themes
+### Comfort
 
-Your days off, planned time and capsules are saved for each month, and your theme is remembered. A capsule used on the site is removed from the planned ones
+- A switch between the light and dark themes of the page
+- The texts follow the language of the site, in French or English
 
-### Language
-
-The texts follow the language of the site, in French or English
+Your plan is saved for each month in your browser, and nothing is sent anywhere. A capsule used on the site is removed from the planned ones
 
 ## Installation
 
