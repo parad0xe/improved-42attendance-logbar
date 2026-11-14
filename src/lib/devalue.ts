@@ -1,6 +1,6 @@
 /**
- * Decodes `values` from the devalue format of SvelteKit.
- * @param values - the values of a node of the page data
+ * Decodes `values` from the devalue format.
+ * @param values - the encoded values
  */
 export function decodeDevalue(values: unknown[]): any {
     const specials = new Map([[-1, undefined], [-3, NaN], [-4, Infinity], [-5, -Infinity], [-6, -0]])
@@ -8,7 +8,7 @@ export function decodeDevalue(values: unknown[]): any {
 
     /**
      * Decodes the value at `index`.
-     * @param index - the index of the value in `values`, or a negative code for a special value
+     * @param index - the index of the value in `values`
      */
     function read(index: number): any {
         if (index < 0) return specials.get(index)

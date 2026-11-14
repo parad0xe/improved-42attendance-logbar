@@ -8,9 +8,9 @@ class CalendarElement extends HTMLElement {
     plan: MonthPlan | null
     dayMarks: Map<number, DayMark>
     shadow: ShadowRoot
-    /** The grid of the days, once the calendar is in the page. */
+    /** The grid of the days. */
     gridElement: Element | null
-    /** The legend of the day marks, once the calendar is in the page. */
+    /** The legend of the day marks. */
     legendElement: Element | null
 
     constructor() {
@@ -121,7 +121,7 @@ class CalendarElement extends HTMLElement {
         this.draw()
     }
 
-    /** Draws the days of the plan and the legend of their marks. */
+    /** Draws the calendar. */
     private draw(): void {
         if (!this.plan || !this.gridElement || !this.legendElement) { return }
 
@@ -154,7 +154,7 @@ class CalendarElement extends HTMLElement {
 
     /**
      * Returns the label of `mark` in the language of the calendar.
-     * @param mark - a public holiday or a closure
+     * @param mark - the mark of a day
      */
     private getMarkLabel(mark: DayMark): string {
         const labels = getLabels(this.lang)
@@ -162,7 +162,7 @@ class CalendarElement extends HTMLElement {
     }
 
     /**
-     * Creates the element of `day`, which toggles the day off when it is today or later.
+     * Creates the element of `day`.
      * @param plan - the plan of the month
      * @param day - the day of the month, from 1
      */

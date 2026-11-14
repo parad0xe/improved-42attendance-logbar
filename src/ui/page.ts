@@ -40,9 +40,9 @@ function isSameTime(a: MonthTime, b: MonthTime): boolean {
 
 export class Page {
     labels: Labels
-    /** The summary of the month, where the gap is shown. */
+    /** The summary of the month. */
     summaryElement: Element
-    /** The progress bar of the month, where the expected bar is shown. */
+    /** The progress bar of the month. */
     progressTrackElement: Element
 
     /**
@@ -65,7 +65,7 @@ export class Page {
         this.progressTrackElement = progressTrackElement
     }
 
-    /** Prepares the progress bar of the site to hold the expected bar. */
+    /** Prepares the progress bar to hold the expected bar. */
     mount(): void {
         this.progressTrackElement.classList.add("relative")
         this.progressTrackElement.querySelector("div")!.classList.add("relative", "z-[1]")
@@ -119,7 +119,7 @@ export class Page {
     }
 
     /**
-     * Renders the expected bar while the logged time is behind it.
+     * Renders the expected bar.
      * @param plan - the plan of the month
      * @param time - the times of the month
      */
@@ -154,7 +154,7 @@ export class Page {
     }
 
     /**
-     * Renders the gap between the logged and the expected time, today and at the end of the month.
+     * Renders the gap.
      * @param plan - the plan of the month
      * @param time - the times of the month
      */
@@ -240,7 +240,7 @@ export class Page {
     }
 
     /**
-     * Calls `onChange` with the new time each time it changes, and returns a function that stops watching.
+     * Calls `onChange` each time the times of the month change, and returns a function that stops watching.
      * @param onChange - called with the new times of the month
      */
     watch(onChange: (time: MonthTime) => void | Promise<void>): () => void {
@@ -269,7 +269,7 @@ export class Page {
 
     /**
      * Replaces the gap with the error.
-     * @param error - the error that stopped the improvements of the month
+     * @param error - the error
      * @param labels - the labels in the language of the site
      */
     static renderError(error: unknown, labels: Labels): void {

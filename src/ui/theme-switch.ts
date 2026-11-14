@@ -4,7 +4,7 @@ const THEME_STORAGE_KEY = "improved-attendance-theme"
 
 type Theme = "light" | "dark"
 
-/** Returns the theme chosen, or else the theme of the system. */
+/** Returns the theme to apply. */
 function loadTheme(): Theme {
     try {
         const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
@@ -12,7 +12,7 @@ function loadTheme(): Theme {
             return storedTheme === "dark" ? "dark" : "light"
         }
     } catch {
-        // The storage can be unavailable, for example in a private window.
+        // The storage can be unavailable.
     }
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
@@ -25,11 +25,11 @@ function saveTheme(theme: Theme): void {
     try {
         localStorage.setItem(THEME_STORAGE_KEY, theme)
     } catch {
-        // Without storage, the choice lasts until the page is reloaded.
+        // The storage can be unavailable.
     }
 }
 
-/** Renders the switch between the light and dark themes, and applies the chosen one to the page. */
+/** Renders the theme switch, and applies the chosen theme to the page. */
 export class ThemeSwitch {
     rootElement: HTMLElement
     theme: Theme

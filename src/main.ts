@@ -12,7 +12,7 @@ const SELECTORS = {
 }
 
 interface StartMonthImprovementsOptions {
-    /** The `Settings` object that renders the plan of the month. */
+    /** The `Settings` object. */
     settings: Settings
     /** The labels in the language of the site. */
     labels: Labels
@@ -27,7 +27,6 @@ interface StartMonthImprovementsOptions {
 function watchUrl(onChange: () => void): void {
     let search = location.search
 
-    // The site changes the URL without any event, but always renders the page again.
     new MutationObserver(() => {
         if (location.search === search) { return }
         search = location.search
@@ -55,7 +54,7 @@ function waitForHydration(): Promise<void> {
     })
 }
 
-/** Starts the improvements of the month in the URL, and returns a function that stops them. */
+/** Starts the improvements of the month, and returns a function that stops them. */
 async function startMonthImprovements({ settings, labels, isOutdated }: StartMonthImprovementsOptions): Promise<() => void> {
     const attendance = await Attendance.fetch(labels)
     if (isOutdated()) { return () => {} }

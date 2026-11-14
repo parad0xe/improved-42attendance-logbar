@@ -22,7 +22,7 @@ interface MonthPlanOptions {
     year: number
     /** The month, 0 for January. */
     monthIndex: number
-    /** The days of the month, from 1, with no planned time. */
+    /** The days off of the month, from 1. */
     daysOff: Set<number>
     /** The time planned on each remaining day, in minutes. */
     dailyMinutes: number
@@ -71,7 +71,7 @@ export class MonthPlan {
     }
 
     /**
-     * Loads the saved plan of the month of `attendance`, or creates a new one.
+     * Loads the plan of the month of `attendance`.
      * @param attendance - the attendance of the month
      */
     static load(attendance: Attendance): MonthPlan {
@@ -113,7 +113,7 @@ export class MonthPlan {
         try {
             localStorage.setItem(MonthPlan.getStorageKey(this.year, this.monthIndex), JSON.stringify(storedPlan))
         } catch {
-            // Without storage, the plan lasts until the page is reloaded.
+            // The storage can be unavailable.
         }
     }
 
@@ -130,7 +130,7 @@ export class MonthPlan {
     }
 
     /**
-     * Returns the number of days after `now` that are not days off.
+     * Returns the number of planned days after `now`.
      * @param now - the current date
      */
     countRemainingDays(now = new Date()): number {
@@ -170,7 +170,7 @@ export class MonthPlan {
     }
 
     /**
-     * Returns the time to log in the month, in minutes, lowered by the planned capsules in the current month.
+     * Returns the time to log in the month with the planned capsules, in minutes.
      * @param monthGoalMinutes - the time to log in the month, in minutes
      * @param now - the current date
      */
@@ -207,7 +207,7 @@ export class MonthPlan {
     }
 
     /**
-     * Returns the time to log on each planned day from today to reach the goal, in minutes, or null when no day is planned.
+     * Returns the time to log on each planned day from today to reach the goal, in minutes.
      * @param time - the times of the month
      * @param now - the current date
      */

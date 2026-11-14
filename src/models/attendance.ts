@@ -10,7 +10,7 @@ interface AttendanceCalendar {
     year: number
     /** The month, 0 for January. */
     monthIndex: number
-    /** The workdays of the month, without weekends and public holidays. */
+    /** The workdays of the month. */
     workdays: Date[]
 }
 
@@ -28,12 +28,12 @@ export type DayMark = "public-holiday" | "closure"
 export class Attendance {
     calendar: AttendanceCalendar
     history: AttendanceHistory
-    /** The number of capsules left to use, shared by every month. */
+    /** The number of capsules left to use. */
     availableCapsules: number
 
     /**
      * Creates the attendance of the month.
-     * @param data - the decoded data of the page
+     * @param data - the decoded data
      * @param labels - the labels in the language of the site
      */
     constructor(data: Record<string, any>, labels: Labels) {
@@ -111,7 +111,7 @@ export class Attendance {
     }
 
     /**
-     * Fetches the attendance of the month shown by the page.
+     * Fetches the attendance of the month.
      * @param labels - the labels in the language of the site
      */
     static async fetch(labels: Labels): Promise<Attendance> {
@@ -120,7 +120,7 @@ export class Attendance {
             throw new Error(`${EXTENSION_NAME}: ${labels.ERROR_DATA_UNAVAILABLE(response.status)}`)
         }
 
-        // SvelteKit can stream more chunks on the next lines; the page data is the first one.
+        // The page data is the first streamed line.
         const page = JSON.parse((await response.text()).split("\n")[0])
         if (page.type === "redirect") {
             throw new Error(`${EXTENSION_NAME}: ${labels.ERROR_SESSION_EXPIRED}`)

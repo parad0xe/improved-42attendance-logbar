@@ -95,15 +95,14 @@ const LABELS: Record<string, Labels> = {
     },
 }
 
-/** Returns the language chosen on the site, or English when none was chosen. */
+/** Returns the language of the site. */
 export function loadLang(): string {
-    // document.cookie rather than cookieStore, which Firefox only has since version 140.
     const langCookie = document.cookie.split("; ").find((cookie) => cookie.startsWith(`${LANG_COOKIE_KEY}=`))
     return langCookie ? langCookie.slice(LANG_COOKIE_KEY.length + 1) : "en"
 }
 
 /**
- * Returns the labels in `lang`, or in English when it has none.
+ * Returns the labels in `lang`.
  * @param lang - the language, such as "fr"
  */
 export function getLabels(lang: string): Labels {

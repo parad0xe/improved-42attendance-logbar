@@ -8,7 +8,7 @@ export function parseMinutes(text: string): number {
 }
 
 /**
- * Formats `minutes` as HH:MM, with a minus sign when negative.
+ * Formats `minutes` as HH:MM.
  * @param minutes - a duration in minutes
  */
 export function formatMinutes(minutes: number): string {

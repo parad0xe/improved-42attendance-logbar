@@ -9,7 +9,7 @@ const SELECTORS = {
 }
 
 interface SettingsOptions {
-    /** The language chosen on the site, such as "fr". */
+    /** The language, such as "fr". */
     lang: string
     /** The labels in the language of the site. */
     labels: Labels
@@ -26,13 +26,13 @@ interface SettingsRenderOptions {
     onChange: () => void
 }
 
-/** Renders the settings block at the bottom of the sidebar. */
+/** Renders the settings block. */
 export class Settings {
     lang: string
     labels: Labels
     rootElement: HTMLElement
     themeSwitchElement: HTMLElement
-    /** The input of the planned capsules, only in the current month. */
+    /** The input of the planned capsules. */
     capsulesInputElement: HTMLInputElement | null
     /** The text of the time to log on each planned day to reach the goal. */
     neededDailyTimeElement: HTMLElement | null
@@ -67,7 +67,7 @@ export class Settings {
         footerContainerElement.append(this.themeSwitchElement, creditElement)
         this.rootElement.append(footerContainerElement)
 
-        // The sidebar content can be rendered again, for example when the mobile sidebar opens.
+        // The site can render the sidebar content again.
         const attach = () => {
             const sidebarContentElement = document.querySelector(SELECTORS.sidebarContent)
             if (sidebarContentElement && !sidebarContentElement.contains(this.rootElement)) {
@@ -191,7 +191,7 @@ export class Settings {
     }
 
     /**
-     * Renders the planned capsules of `plan`, at most `availableCapsules`.
+     * Renders the planned capsules of `plan`.
      * @param plan - the plan of the month
      * @param availableCapsules - the number of capsules left to use
      */
@@ -203,7 +203,7 @@ export class Settings {
 
     /**
      * Renders the time to log on each planned day to reach the goal.
-     * @param neededMinutes - the time in minutes, or null when no day is planned
+     * @param neededMinutes - the time to log on each planned day, in minutes
      */
     renderNeededDailyTime(neededMinutes: number | null): void {
         if (!this.neededDailyTimeElement) { return }
