@@ -71,7 +71,10 @@ async function startMonthImprovements({ settings, labels, isOutdated }: StartMon
 
     const time = page.read()
     if (plan.isCurrentMonth()) {
-        plan.syncCapsules(attendance.availableCapsules, time.monthGoalMinutes)
+        plan.sync({
+            availableCapsules: attendance.availableCapsules,
+            monthGoalMinutes: time.monthGoalMinutes,
+        })
         plan.save()
     }
 
@@ -89,7 +92,10 @@ async function startMonthImprovements({ settings, labels, isOutdated }: StartMon
         // A capsule used on the site lowers the goal of the month.
         if (plan.isCurrentMonth() && time.monthGoalMinutes !== plan.lastSync?.monthGoalMinutes) {
             const { availableCapsules } = await Attendance.fetch(labels)
-            plan.syncCapsules(availableCapsules, time.monthGoalMinutes)
+            plan.sync({
+                availableCapsules,
+                monthGoalMinutes: time.monthGoalMinutes,
+            })
             plan.save()
             settings.renderCapsules(plan, availableCapsules)
         }

@@ -4,7 +4,7 @@ import type { Attendance } from "./attendance"
 
 const PLAN_STORAGE_KEY = "improved-attendance-plan"
 
-interface CapsuleSync {
+interface PlanSync {
     availableCapsules: number
     /** The time to log in the month, in minutes. */
     monthGoalMinutes: number
@@ -14,7 +14,7 @@ interface StoredMonthPlan {
     daysOff: number[]
     dailyMinutes: number
     capsules?: number
-    lastSync?: CapsuleSync | null
+    lastSync?: PlanSync | null
 }
 
 interface MonthPlanOptions {
@@ -28,8 +28,8 @@ interface MonthPlanOptions {
     dailyMinutes: number
     /** The number of capsules planned to be used this month. */
     capsules: number
-    /** The available capsules and the time to log in the month at the last capsule sync. */
-    lastSync: CapsuleSync | null
+    /** The last sync of the plan. */
+    lastSync: PlanSync | null
 }
 
 export interface MonthTime {
@@ -49,7 +49,7 @@ export class MonthPlan {
     daysOff: Set<number>
     dailyMinutes: number
     capsules: number
-    lastSync: CapsuleSync | null
+    lastSync: PlanSync | null
 
     /** Creates the plan of a month. */
     constructor({ year, monthIndex, daysOff, dailyMinutes, capsules, lastSync }: MonthPlanOptions) {
@@ -180,21 +180,19 @@ export class MonthPlan {
     }
 
     /**
-     * Removes the capsules used since the last sync from the planned ones.
-     * @param availableCapsules - the number of capsules left to use
-     * @param monthGoalMinutes - the time to log in the month, in minutes
+     * Removes the capsules used since the last sync from the planned ones, and keeps `planSync` as the last sync.
+     * @param planSync - the new sync of the plan
      */
-    syncCapsules(availableCapsules: number, monthGoalMinutes: number): void {
+    sync(planSync: PlanSync): void {
+        const { availableCapsules } = planSync
         if (this.lastSync) {
-            // A capsule counts as used when the available capsules and the time to log in the month both went down.
-            const usedCapsules = Math.min(
-                this.lastSync.availableCapsules - availableCapsules,
-                Math.round((this.lastSync.monthGoalMinutes - monthGoalMinutes) / WORKDAY_MINUTES),
-            )
-            this.capsules -= Math.max(0, usedCapsules)
+            const capsulesDiff = availableCapsules - this.lastSync.availableCapsules
+            if (capsulesDiff < 0) {
+                this.capsules += capsulesDiff
+            }
         }
         this.capsules = Math.max(0, Math.min(this.capsules, availableCapsules))
-        this.lastSync = { availableCapsules, monthGoalMinutes }
+        this.lastSync = planSync
     }
 
     /**
