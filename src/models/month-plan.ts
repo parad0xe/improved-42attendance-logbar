@@ -225,13 +225,21 @@ export class MonthPlan {
     }
 
     /**
+     * Returns the planned time left to log today, in minutes.
+     * @param time - the times of the month
+     * @param now - the current date
+     */
+    getRemainingTodayMinutes(time: MonthTime, now = new Date()): number {
+        return this.isPlannedDay(now) ? Math.max(0, this.dailyMinutes - time.loggedTodayMinutes) : 0
+    }
+
+    /**
      * Returns the time logged by the end of the month when the plan is followed, in minutes.
      * @param time - the times of the month
      * @param now - the current date
      */
     getProjectedMinutes(time: MonthTime, now = new Date()): number {
         const loggedTotalMinutes = time.loggedMonthMinutes + time.runningSessionMinutes
-        const remainingTodayMinutes = this.isPlannedDay(now) ? Math.max(0, this.dailyMinutes - time.loggedTodayMinutes) : 0
-        return loggedTotalMinutes + remainingTodayMinutes + this.countRemainingDays(now) * this.dailyMinutes
+        return loggedTotalMinutes + this.getRemainingTodayMinutes(time, now) + this.countRemainingDays(now) * this.dailyMinutes
     }
 }

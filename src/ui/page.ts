@@ -167,51 +167,50 @@ export class Page {
 
         const { start, end } = plan.getExpectedRange(time.monthGoalMinutes)
         const loggedTotalMinutes = time.loggedMonthMinutes + time.runningSessionMinutes
-        const expectedMinutes = loggedTotalMinutes < start ? start : end
-        const gapMinutes = Math.abs(expectedMinutes - loggedTotalMinutes)
-        const gapDays = gapMinutes / plan.dailyMinutes
+        const remainingTodayMinutes = plan.getRemainingTodayMinutes(time)
 
-        let gapDirection
+        let expectedMinutes = null
         if (loggedTotalMinutes < start) {
-            gapDirection = {
-                label: `-${formatMinutes(gapMinutes)}`,
-                className: "improved-attendance-missing",
-                formatDays: this.labels.GAP_MISSING_DAYS,
-            }
-        } else if (loggedTotalMinutes < end) {
-            gapDirection = {
-                label: this.labels.GAP_REMAINING_TODAY(formatMinutes(gapMinutes)),
-                className: "improved-attendance-in-progress",
-                formatDays: null,
-            }
-        } else {
-            gapDirection = {
-                label: `+${formatMinutes(gapMinutes)}`,
-                className: "improved-attendance-bonus",
-                formatDays: this.labels.GAP_BONUS_DAYS,
-            }
+            expectedMinutes = start
+        } else if (loggedTotalMinutes >= end || remainingTodayMinutes === 0) {
+            expectedMinutes = end
         }
 
         const gapContainerElement = document.createElement("span")
         gapContainerElement.className = "improved-attendance-gap-container"
         this.summaryElement.prepend(gapContainerElement)
 
-        const gapTodayContainerElement = document.createElement("span")
-        gapTodayContainerElement.className = "improved-attendance-gap-today-container"
-        gapContainerElement.append(gapTodayContainerElement)
+        if (expectedMinutes !== null) {
+            const gapMinutes = loggedTotalMinutes - expectedMinutes
+            const isBonus = gapMinutes >= 0
+            const className = isBonus ? "improved-attendance-bonus" : "improved-attendance-missing"
 
-        const gapTimeElement = document.createElement("strong")
-        gapTimeElement.classList.add(gapDirection.className)
-        gapTimeElement.title = this.labels.GAP_EXPECTED(formatMinutes(expectedMinutes))
-        gapTimeElement.textContent = gapDirection.label
-        gapTodayContainerElement.append(gapTimeElement)
+            const gapTodayContainerElement = document.createElement("span")
+            gapTodayContainerElement.className = "improved-attendance-gap-today-container"
+            gapContainerElement.append(gapTodayContainerElement)
 
-        if (plan.dailyMinutes > 0 && gapDirection.formatDays) {
-            const gapDaysElement = document.createElement("span")
-            gapDaysElement.className = "improved-attendance-gap-days"
-            gapDaysElement.classList.add(gapDirection.className)
-            gapDaysElement.textContent = gapDirection.formatDays(gapDays)
-            gapTodayContainerElement.append(gapDaysElement)
+            const gapTimeElement = document.createElement("strong")
+            gapTimeElement.classList.add(className)
+            gapTimeElement.title = this.labels.GAP_EXPECTED(formatMinutes(expectedMinutes))
+            gapTimeElement.textContent = `${isBonus ? "+" : "-"}${formatMinutes(Math.abs(gapMinutes))}`
+            gapTodayContainerElement.append(gapTimeElement)
+
+            if (plan.dailyMinutes > 0) {
+                const formatDays = isBonus ? this.labels.GAP_BONUS_DAYS : this.labels.GAP_MISSING_DAYS
+                const gapDaysElement = document.createElement("span")
+                gapDaysElement.className = "improved-attendance-gap-days"
+                gapDaysElement.classList.add(className)
+                gapDaysElement.textContent = formatDays(Math.abs(gapMinutes) / plan.dailyMinutes)
+                gapTodayContainerElement.append(gapDaysElement)
+            }
+        }
+
+        if (remainingTodayMinutes > 0) {
+            const gapRemainingTodayElement = document.createElement("strong")
+            gapRemainingTodayElement.className = "improved-attendance-gap-remaining-today"
+            gapRemainingTodayElement.classList.add("improved-attendance-in-progress")
+            gapRemainingTodayElement.textContent = this.labels.GAP_REMAINING_TODAY(formatMinutes(remainingTodayMinutes))
+            gapContainerElement.append(gapRemainingTodayElement)
         }
 
         if (plan.isCurrentMonth()) {
