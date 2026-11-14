@@ -31,8 +31,7 @@ function saveTheme(theme: Theme): void {
 
 /** Renders the switch between the light and dark themes, and applies the chosen one to the page. */
 export class ThemeSwitch {
-    /** The row of the switch, with its label. */
-    element: HTMLElement
+    rootElement: HTMLElement
     theme: Theme
     private switchElement: HTMLButtonElement
 
@@ -43,9 +42,9 @@ export class ThemeSwitch {
     constructor(labels: Labels) {
         this.theme = loadTheme()
 
-        this.element = document.createElement("div")
-        this.element.className = "improved-attendance-settings-row"
-        this.element.textContent = labels.SETTINGS_THEME
+        this.rootElement = document.createElement("div")
+        this.rootElement.className = "improved-attendance-settings-row"
+        this.rootElement.textContent = labels.SETTINGS_THEME
 
         this.switchElement = document.createElement("button")
         this.switchElement.type = "button"
@@ -58,7 +57,7 @@ export class ThemeSwitch {
             saveTheme(this.theme)
             this.render()
         })
-        this.element.append(this.switchElement)
+        this.rootElement.append(this.switchElement)
     }
 
     /** Applies the chosen theme to the page, and keeps it applied. */
@@ -70,9 +69,8 @@ export class ThemeSwitch {
     /** Renders the chosen theme on the page and on the switch. */
     private render(): void {
         const isDark = this.theme === "dark"
-        const rootElement = document.documentElement
-        if (rootElement.classList.contains("dark") !== isDark) {
-            rootElement.classList.toggle("dark", isDark)
+        if (document.documentElement.classList.contains("dark") !== isDark) {
+            document.documentElement.classList.toggle("dark", isDark)
         }
         this.switchElement.textContent = isDark ? "☀" : "☾"
         this.switchElement.setAttribute("aria-pressed", String(isDark))

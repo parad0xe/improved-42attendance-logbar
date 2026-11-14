@@ -30,8 +30,7 @@ interface SettingsRenderOptions {
 export class Settings {
     lang: string
     labels: Labels
-    /** The block in the sidebar. */
-    element: HTMLElement
+    rootElement: HTMLElement
     themeSwitchElement: HTMLElement
     /** The input of the planned capsules, only in the current month. */
     capsulesInputElement: HTMLInputElement | null
@@ -46,8 +45,8 @@ export class Settings {
         this.labels = labels
         this.themeSwitchElement = themeSwitchElement
 
-        this.element = document.createElement("section")
-        this.element.className = "improved-attendance-settings"
+        this.rootElement = document.createElement("section")
+        this.rootElement.className = "improved-attendance-settings"
 
         this.capsulesInputElement = null
         this.neededDailyTimeElement = null
@@ -66,13 +65,13 @@ export class Settings {
         const footerContainerElement = document.createElement("div")
         footerContainerElement.className = "improved-attendance-footer-container"
         footerContainerElement.append(this.themeSwitchElement, creditElement)
-        this.element.append(footerContainerElement)
+        this.rootElement.append(footerContainerElement)
 
         // The sidebar content can be rendered again, for example when the mobile sidebar opens.
         const attach = () => {
             const sidebarContentElement = document.querySelector(SELECTORS.sidebarContent)
-            if (sidebarContentElement && !sidebarContentElement.contains(this.element)) {
-                sidebarContentElement.append(this.element)
+            if (sidebarContentElement && !sidebarContentElement.contains(this.rootElement)) {
+                sidebarContentElement.append(this.rootElement)
             }
         }
         attach()
@@ -188,7 +187,7 @@ export class Settings {
         }
 
         this.settingsContainerElement = settingsContainerElement
-        this.element.prepend(settingsContainerElement)
+        this.rootElement.prepend(settingsContainerElement)
     }
 
     /**

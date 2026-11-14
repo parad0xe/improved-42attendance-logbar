@@ -114,7 +114,7 @@ function main(): void {
     const themeSwitch = new ThemeSwitch(labels)
     themeSwitch.mount()
 
-    const settings = new Settings({ lang, labels, themeSwitchElement: themeSwitch.element })
+    const settings = new Settings({ lang, labels, themeSwitchElement: themeSwitch.rootElement })
     let isSettingsMounted = false
 
     let lastRun = 0
